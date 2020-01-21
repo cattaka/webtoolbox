@@ -134,13 +134,11 @@ const makeDiffTable = (
   currValuesList.forEach(vs => {
     const keys = JSON.stringify(keyColumns.map(k => vs.get(k)));
     currKeys2Values.set(keys, vs);
-    console.log(keys);
   });
   const prevKeys2Values: Map<string, Map<string, string>> = new Map();
   prevValuesList.forEach(vs => {
     const keys = JSON.stringify(keyColumns.map(k => vs.get(k)));
     prevKeys2Values.set(keys, vs);
-    console.log(keys);
     if (!currKeys2Values.get(keys)) {
       deletedValues.push(vs);
     }
