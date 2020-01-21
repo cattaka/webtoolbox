@@ -1,12 +1,10 @@
-import React, {ChangeEvent, useCallback} from 'react';
-import { useState } from 'react';
-import ReactDOM from 'react-dom';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import csvString from 'csv-string';
 
-const exampleKeys1 = "key1,key2";
-const exampleValue1 = "key1,key2,value\nhoge1,hoge2,hoge3\nfuga1,fuga2,fuga3\nfoo1,foo2,foo3\nbar1,bar2,bar3";
-const exampleValue2 = "key1,key2,value\nhoge1,hoge2,hoge3\nfuga1,fuga2d,fuga3\nfoo1,foo2,foo3d\nbar1,bar2,bar3";
+const exampleKeys1 = "key1\tkey2";
+const exampleValue1 = "key1\tkey2\tvalue\nhoge1\thoge2\thoge3\nfuga1\tfuga2\tfuga3\nfoo1\tfoo2\tfoo3\nbar1\tbar2\tbar3";
+const exampleValue2 = "key1\tkey2\tvalue\nhoge1\thoge2\thoge3\nfuga1\tfuga2d\tfuga3\nfoo1\tfoo2\tfoo3d\nbar1\tbar2\tbar3";
 
 type State = {
   keyColumns: string;
@@ -81,9 +79,9 @@ export default () => {
 }
 
 const calculateDiff = (keyColumnsStr: string, input1Str: string, input2Str: string): MarkedTable => {
-  const keyColumns = csvString.parse(keyColumnsStr)[0];
-  const input1 = csvString.parse(input1Str);
-  const input2 = csvString.parse(input2Str);
+  const keyColumns = csvString.parse(keyColumnsStr, "\t")[0];
+  const input1 = csvString.parse(input1Str, "\t");
+  const input2 = csvString.parse(input2Str, "\t");
 
   const columns1 = input1[0];
   const columns2 = input2[0];

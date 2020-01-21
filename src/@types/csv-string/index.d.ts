@@ -1,3 +1,3 @@
 declare module "csv-string" {
-  function parse(str: string): string[][];
+  function parse(input: string, separator?: string, quote?: string): string[][];
 }
