@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import csvString from 'csv-string';
 
-const exampleKeys1 = "key1\tkey2";
-const exampleValue1 = "key1\tkey2\tvalue\nhoge1\thoge2\thoge3\nfuga1\tfuga2\tfuga3\nfoo1\tfoo2\tfoo3\nbar1\tbar2\tbar3";
-const exampleValue2 = "key1\tkey2\tvalue\nhoge1\thoge2\thoge3\nfuga1\tfuga2d\tfuga3\nfoo1\tfoo2\tfoo3d\nbar1\tbar2\tbar3";
+const exampleKeys1 = "key1,key2";
+const exampleValue1 = "key1,key2,value1,value2\nhoge1,hoge2,hoge3,hoge4\nfuga1,fuga2,fuga3,fuga4\nfoo1,foo2,foo3,foo4\nbar1,bar2,bar3,bar4";
+const exampleValue2 = "key1,key2,value1,value2\nhoge1,hoge2,hoge3,hoge4\nfuga1,fuga2d,fuga3,fuga4\nfoo1,foo2,foo3d,foo4\nbar1,bar2,bar3,bar4";
 
 type State = {
   keyColumns: string;
@@ -12,6 +12,8 @@ type State = {
   value2: string;
   markedTable?: MarkedTable;
   showOnlyDiff: boolean;
+  separator: string;
+  quote: string;
 };
 
 interface MarkedCell {
@@ -38,15 +40,39 @@ export default () => {
     value1: exampleValue1,
     value2: exampleValue2,
     markedTable: undefined,
-    showOnlyDiff: false
+    showOnlyDiff: false,
+    separator: ",",
+    quote: '"'
   } as State);
 
+  const onChangeSeparator = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    dispatchState({
+      ...state,
+      separator: e.target.value,
+      keyColumns: convertCsv(state.keyColumns, state.separator, state.quote, e.target.value, state.quote),
+      value1: convertCsv(state.value1, state.separator, state.quote, e.target.value, state.quote),
+      value2: convertCsv(state.value2, state.separator, state.quote, e.target.value, state.quote)
+    });
+  };
+  const onChangeQuote = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    console.log(state.value1);
+    console.log(convertCsv(state.value1, state.separator, state.quote, state.separator, e.target.value));
+    dispatchState({
+      ...state,
+      quote: e.target.value,
+      keyColumns: convertCsv(state.keyColumns, state.separator, state.quote, state.separator, e.target.value),
+      value1: convertCsv(state.value1, state.separator, state.quote, state.separator, e.target.value),
+      value2: convertCsv(state.value2, state.separator, state.quote, state.separator, e.target.value)
+    });
+  };
   const onChangeKeysText1 = (e: React.ChangeEvent<HTMLInputElement>) => { dispatchState({ ...state, keyColumns: e.target.value }); };
   const onChangeValue1Text = (e: React.ChangeEvent<HTMLTextAreaElement>) => { dispatchState({ ...state, value1: e.target.value }); };
   const onChangeValue2Text = (e: React.ChangeEvent<HTMLTextAreaElement>) => { dispatchState({ ...state, value2: e.target.value }); };
 
   const onClickCalculateDiff = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     const diffTable = calculateDiff(
+      state.separator,
+      state.quote,
       state.keyColumns,
       state.value1,
       state.value2
@@ -62,15 +88,30 @@ export default () => {
   };
 
   return <div>
-    <input type="text" value={state.keyColumns} onChange={onChangeKeysText1} />
+    <label htmlFor="separator">Separator:</label>
+    <select name={"separator"} defaultValue={state.separator} onChange={onChangeSeparator}>
+      <option value={","}>,</option>
+      <option value={"\t"}>TAB</option>
+    </select>
     <div>
-      <textarea style={{ width: '40%', height: '30em'}} onChange={onChangeValue1Text} value={state.value1} />
-      <textarea style={{ width: '40%', height: '30em'}} onChange={onChangeValue2Text} value={state.value2} />
+      <label htmlFor="quote">Quote:</label>
+      <select defaultValue={state.quote} onChange={onChangeQuote}>
+        <option value={'"'}>"</option>
+        <option value={"'"}>'</option>
+      </select>
+    </div>
+    <div>
+      <label htmlFor="keyColumns">Key columns:</label>
+      <input name={"keyColumns"} type="text" value={state.keyColumns} onChange={onChangeKeysText1} />
+    </div>
+    <div>
+      <ValuesTextArea onChange={onChangeValue1Text} value={state.value1} />
+      <ValuesTextArea onChange={onChangeValue2Text} value={state.value2} />
     </div>
     <button style={{width: '100%'}} onClick={onClickCalculateDiff}>Calc diff</button>
     <div>
       <input type="checkbox" onChange={onChangeShowOnlyDiff} />
-      変更のあるもののみ表示
+      Show only diffs
     </div>
     <div>
       { state.markedTable ? genMarkedTable(state.markedTable, state.showOnlyDiff) : undefined }
@@ -78,10 +119,16 @@ export default () => {
   </div>;
 }
 
-const calculateDiff = (keyColumnsStr: string, input1Str: string, input2Str: string): MarkedTable => {
-  const keyColumns = csvString.parse(keyColumnsStr, "\t")[0];
-  const input1 = csvString.parse(input1Str, "\t");
-  const input2 = csvString.parse(input2Str, "\t");
+const calculateDiff = (
+  separator: string,
+  quote: string,
+  keyColumnsStr: string,
+  input1Str: string,
+  input2Str: string
+): MarkedTable => {
+  const keyColumns = csvString.parse(keyColumnsStr, separator, quote)[0];
+  const input1 = csvString.parse(input1Str, separator, quote);
+  const input2 = csvString.parse(input2Str, separator, quote);
 
   const columns1 = input1[0];
   const columns2 = input2[0];
@@ -202,31 +249,42 @@ const makeDiffRow = (
 const genMarkedTable = (markedTable: MarkedTable, showOnlyDiff: boolean) => {
   return (
     <div>
-      {/*<div>*/}
-      {/*  <CheckBox onChange={onChangeShowOnlyDiff}>変更のあるもののみ表示</CheckBox>*/}
-      {/*</div>*/}
-          <table>
-            <StyledTr>
-              {markedTable.header.cells.map(cell => (
-                <StyledTh style={{ backgroundColor: cell.color, color: cell.isKey ? 'red' : undefined }}>
-                  {cell.text}
-                </StyledTh>
-              ))}
-            </StyledTr>
-            {markedTable.rows.map(
-              row =>
-                (!showOnlyDiff || row.hasDiff) && (
-                  <StyledTr>
-                    {row.cells.map(cell => (
-                      <StyledTd style={{ backgroundColor: cell.color }} title={cell.oldText}>{cell.text}</StyledTd>
-                    ))}
-                  </StyledTr>
-                )
-            )}
-          </table>
+      <table>
+        <thead>
+          <StyledTr>
+            {markedTable.header.cells.map((cell, cindex) => (
+              <StyledTh key={cindex} style={{ backgroundColor: cell.color, color: cell.isKey ? 'red' : undefined }}>
+                {cell.text}
+              </StyledTh>
+            ))}
+          </StyledTr>
+        </thead>
+        <tbody>
+          {markedTable.rows.map(
+            (row, rindex) =>
+              (!showOnlyDiff || row.hasDiff) && (
+                <StyledTr key={rindex}>
+                  {row.cells.map((cell, cindex) => (
+                    <StyledTd key={cindex} style={{ backgroundColor: cell.color }} title={cell.oldText}>{cell.text}</StyledTd>
+                  ))}
+                </StyledTr>
+              )
+          )}
+        </tbody>
+      </table>
     </div>
   );
 };
+
+const convertCsv = (str: string, oldSeparator: string, oldQuote: string, newSeparator: string, newQuote: string) => {
+  const v = csvString.parse(str, oldSeparator, oldQuote);
+  return csvString.stringify(v, newSeparator, newQuote);
+};
+
+const ValuesTextArea = styled.textarea`
+  width: 40%;
+  height: 30em;
+`;
 
 const StyledTr = styled.tr``;
 
