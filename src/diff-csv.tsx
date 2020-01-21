@@ -18,6 +18,7 @@ type State = {
 
 interface MarkedCell {
   text: string;
+  oldText?: string;
   color?: string;
   isKey?: boolean;
 }
@@ -167,16 +168,19 @@ const makeDiffRow = (
     const v2 = currValues.get(k);
 
     let color: string | undefined;
+    let oldText: string | undefined;
     if (prevValues) {
       const v1 = prevValues && prevValues.get(k);
-      if (JSON.stringify(v2) !== JSON.stringify(v1)) {
+      if (v2 !== v1) {
         color = colorDidChanged;
+        oldText = v1;
       }
     } else {
       color = colorAdded;
     }
     return {
       text: v2,
+      oldText: oldText,
       color
     } as MarkedCell;
   });
@@ -205,7 +209,7 @@ const genMarkedTable = (markedTable: MarkedTable, showOnlyDiff: boolean) => {
                 (!showOnlyDiff || row.hasDiff) && (
                   <StyledTr>
                     {row.cells.map(cell => (
-                      <StyledTd style={{ backgroundColor: cell.color }}>{cell.text}</StyledTd>
+                      <StyledTd style={{ backgroundColor: cell.color }} title={cell.oldText}>{cell.text}</StyledTd>
                     ))}
                   </StyledTr>
                 )
