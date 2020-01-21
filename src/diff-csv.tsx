@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {ChangeEvent, useCallback} from 'react';
 import { useState } from 'react';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components';
@@ -56,6 +56,13 @@ export default () => {
     dispatchState({ ...state, markedTable: diffTable });
   };
 
+  const onChangeShowOnlyDiff = (e: React.ChangeEvent<HTMLInputElement>) => {
+    dispatchState({
+      ...state,
+      showOnlyDiff: e.target.checked
+    });
+  };
+
   return <div>
     <input type="text" value={state.keyColumns} onChange={onChangeKeysText1} />
     <div>
@@ -63,6 +70,10 @@ export default () => {
       <textarea style={{ width: '40%', height: '30em'}} onChange={onChangeValue2Text} value={state.value2} />
     </div>
     <button style={{width: '100%'}} onClick={onClickCalculateDiff}>Calc diff</button>
+    <div>
+      <input type="checkbox" onChange={onChangeShowOnlyDiff} />
+      変更のあるもののみ表示
+    </div>
     <div>
       { state.markedTable ? genMarkedTable(state.markedTable, state.showOnlyDiff) : undefined }
     </div>
@@ -174,8 +185,10 @@ const makeDiffRow = (
       if (v2 !== v1) {
         color = colorDidChanged;
         oldText = v1;
+        hasDiff = hasDiff || true;
       }
     } else {
+      hasDiff = hasDiff || true;
       color = colorAdded;
     }
     return {
