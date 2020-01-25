@@ -108,7 +108,7 @@ export default () => {
       <ValuesTextArea onChange={onChangeValue1Text} value={state.value1} />
       <ValuesTextArea onChange={onChangeValue2Text} value={state.value2} />
     </div>
-    <button style={{width: '100%'}} onClick={onClickCalculateDiff}>Calc diff</button>
+    <ExecButton onClick={onClickCalculateDiff}>Calc diff</ExecButton>
     <div>
       <input type="checkbox" onChange={onChangeShowOnlyDiff} />
       Show only diffs
@@ -282,8 +282,12 @@ const convertCsv = (str: string, oldSeparator: string, oldQuote: string, newSepa
 };
 
 const ValuesTextArea = styled.textarea`
-  width: 40%;
+  width: 45%;
   height: 30em;
+`;
+
+const ExecButton = styled.button`
+  width: 90%;
 `;
 
 const StyledTr = styled.tr``;

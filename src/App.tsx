@@ -7,7 +7,9 @@ import {
   Link
 } from 'react-router-dom';
 
+import Home from './pages/home'
 import DiffCsv from './pages/diff-csv'
+import About from './pages/about'
 
 const App: React.FC = () => {
   return (
@@ -43,14 +45,6 @@ const App: React.FC = () => {
       </div>
     </Router>
   );
-}
-
-function Home() {
-  return <h2>Home</h2>;
-}
-
-function About() {
-  return <h2>About</h2>;
-}
+};
 
 export default App;
