@@ -1,0 +1,17 @@
+body {
+    background-color: #282c34;
+    color: white;
+}
+
+a {
+    color: lightblue;
+}
+
+span {
+    color: white;
+}
+
+ul, li {
+    padding: 0px;
+    margin: 0px;
+}

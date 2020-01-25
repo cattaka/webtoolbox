@@ -7,39 +7,39 @@ import {
   Link
 } from 'react-router-dom';
 
-import DiffCsv from './diff-csv'
+import DiffCsv from './pages/diff-csv'
 
 const App: React.FC = () => {
   return (
     <Router>
-      <div>
-        <nav>
+      <div className={'App-root'}>
+        <nav className={'App-header'}>
           <ul>
             <li>
               <Link to="/">Home</Link>
             </li>
             <li>
-              <Link to="/about">About</Link>
+              <Link to="/diff-csv">diff-csv</Link>
             </li>
             <li>
-              <Link to="/diff-csv">diff-csv</Link>
+              <Link to="/about">About</Link>
             </li>
           </ul>
         </nav>
 
-        {/* A <Switch> looks through its children <Route>s and
-            renders the first one that matches the current URL. */}
-        <Switch>
-          <Route path="/diff-csv">
-            <DiffCsv />
-          </Route>
-          <Route path="/about">
-            <About />
-          </Route>
-          <Route path="/">
-            <Home />
-          </Route>
-        </Switch>
+        <div className={'App-content'}>
+          <Switch>
+            <Route path="/diff-csv">
+              <DiffCsv />
+            </Route>
+            <Route path="/about">
+              <About />
+            </Route>
+            <Route path="/">
+              <Home />
+            </Route>
+          </Switch>
+        </div>
       </div>
     </Router>
   );
@@ -51,10 +51,6 @@ function Home() {
 
 function About() {
   return <h2>About</h2>;
-}
-
-function Users() {
-  return <h2>Users</h2>;
 }
 
 export default App;
