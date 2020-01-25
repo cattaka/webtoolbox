@@ -1,14 +1,14 @@
 body {
-    background-color: #282c34;
-    color: white;
+    background-color: lightgray;
+    color: black;
 }
 
 a {
-    color: lightblue;
+    color: darkblue;
 }
 
 span {
-    color: white;
+    color: black;
 }
 
 ul, li {
