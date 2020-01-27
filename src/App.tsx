@@ -9,6 +9,7 @@ import {
 
 import Home from './pages/home'
 import DiffCsv from './pages/diff-csv'
+import PrettifyJson from './pages/prettify-json'
 import About from './pages/about'
 
 const App: React.FC = () => {
@@ -24,15 +25,20 @@ const App: React.FC = () => {
               <Link to="/diff-csv">diff-csv</Link>
             </li>
             <li>
+              <Link to="/prettify-json">prettify-json</Link>
+            </li>
+            <li>
               <Link to="/about">About</Link>
             </li>
           </ul>
         </nav>
-
         <div className={'App-content'}>
           <Switch>
             <Route path="/diff-csv">
               <DiffCsv />
+            </Route>
+            <Route path="/prettify-json">
+              <PrettifyJson />
             </Route>
             <Route path="/about">
               <About />
