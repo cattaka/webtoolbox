@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import csvString from 'csv-string';
 
-const exampleRegex = '<div><img src="([^"]+)".*>(.+)</div>';
+const exampleRegex = '<div><img src="([^"]+)"[^>]*>(.+)</div>';
 const exampleValue = '<html>\n' +
   '<body>\n' +
   '<div><img src="http://localhost/hoge.png" alt="hoge">hogehoge</div>\n' +
