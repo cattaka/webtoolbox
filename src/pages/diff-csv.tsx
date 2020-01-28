@@ -55,8 +55,6 @@ export default () => {
     });
   };
   const onChangeQuote = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    console.log(state.value1);
-    console.log(convertCsv(state.value1, state.separator, state.quote, state.separator, e.target.value));
     dispatchState({
       ...state,
       quote: e.target.value,
@@ -88,12 +86,12 @@ export default () => {
   };
 
   return <div>
-    <label htmlFor="separator">Separator:</label>
+    <label htmlFor="separator">Separator of input:</label>
     <select name={"separator"} defaultValue={state.separator} onChange={onChangeSeparator}>
       <option value={","}>,</option>
       <option value={"\t"}>TAB</option>
     </select>
-    <div>
+    <div style={{display: "none"}}> {/* Not supported yet */}
       <label htmlFor="quote">Quote:</label>
       <select defaultValue={state.quote} onChange={onChangeQuote}>
         <option value={'"'}>"</option>
