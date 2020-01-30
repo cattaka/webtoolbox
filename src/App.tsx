@@ -9,7 +9,7 @@ import {
 
 import Home from './pages/home'
 import DiffCsv from './pages/diff-csv'
-import PrettifyJson from './pages/prettify-json'
+import FormatJson from './pages/format-json'
 import PullByRegex from './pages/pull-by-regex'
 import About from './pages/about'
 import Page from "./components/Page";
@@ -27,7 +27,7 @@ const App: React.FC = () => {
               <Link to="/diff-csv">Diff CSV</Link>
             </li>
             <li>
-              <Link to="/prettify-json">Prettify JSON</Link>
+              <Link to="/format-json">Format JSON</Link>
             </li>
             <li>
               <Link to="/pull-by-regex">Pull by regex</Link>
@@ -42,8 +42,8 @@ const App: React.FC = () => {
             <Route path="/diff-csv">
               <Page title={'Diff CSV - WebToolbox'}><DiffCsv /></Page>
             </Route>
-            <Route path="/prettify-json">
-              <Page title={'Prettify JSON - WebToolbox'}><PrettifyJson /></Page>
+            <Route path="/format-json">
+              <Page title={'Format JSON - WebToolbox'}><FormatJson /></Page>
             </Route>
             <Route path="/pull-by-regex">
               <Page title={'Pull by regex - WebToolbox'}><PullByRegex /></Page>
