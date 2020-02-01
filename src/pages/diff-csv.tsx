@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import csvString from 'csv-string';
+import {convertCsv} from "../utils/csv-utils";
 
 const exampleKeys1 = "key1,key2";
 const exampleValue1 = "key1,key2,value1,value2\nhoge1,hoge2,hoge3,hoge4\nfuga1,fuga2,fuga3,fuga4\nfoo1,foo2,foo3,foo4\nbar1,bar2,bar3,bar4";
@@ -272,11 +273,6 @@ const genMarkedTable = (markedTable: MarkedTable, showOnlyDiff: boolean) => {
       </table>
     </div>
   );
-};
-
-const convertCsv = (str: string, oldSeparator: string, oldQuote: string, newSeparator: string, newQuote: string) => {
-  const v = csvString.parse(str, oldSeparator, oldQuote);
-  return csvString.stringify(v, newSeparator, newQuote);
 };
 
 const ValuesTextArea = styled.textarea`
