@@ -108,9 +108,10 @@ export default () => {
       .attr("stroke", "#fff")
       .attr("stroke-width", 1.5)
       .join("g");
+
     const circles = nodes.append("circle")
       .attr("r", calcRadiusFunction(state.radiusBias))
-      .attr("fill", createColorCallback())
+      .attr("fill", createColorFunction)
       .call(createDragCallback(simulation))
     ;
     const texts = nodes.append("text")
@@ -126,7 +127,7 @@ export default () => {
     };
 
     svg.call(d3.zoom<any, any>()
-      .scaleExtent([1 / 2, 12])
+      .scaleExtent([1 / 12, 12])
       .on("zoom", zoomed));
 
     simulation.on("tick", () => {
@@ -200,9 +201,14 @@ const createDragCallback = (simulation: Simulation<NodeDatum, LinkDatum>) => {
     .on("end", dragended);
 };
 
-const createColorCallback = () => {
-  const scale = d3.scaleOrdinal(d3.schemeCategory10);
-  return (d: NodeDatum) => scale(d.group.toString());
+const createColorFunction = (d: NodeDatum) => {
+  let hex = hashcode(d.id).toString(16);
+  if (hex.length > 6) {
+    hex = hex.slice(hex.length - 6, hex.length);
+  } else if (hex.length < 6) {
+    hex = "000000".slice(0, 6 - hex.length) + hex;
+  }
+  return "#" + hex + "3f";
 };
 
 const parseInputValues = (
@@ -302,6 +308,8 @@ const resetPosition = (node: NodeDatum, width: number, height: number) => {
 
 const Root = styled.div`
   display: flex;
+  width: 100%;
+  height: 100%;
 `;
 
 const LeftPanel = styled.div`
