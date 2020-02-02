@@ -202,7 +202,7 @@ const createDragCallback = (simulation: Simulation<NodeDatum, LinkDatum>) => {
 };
 
 const createColorFunction = (d: NodeDatum) => {
-  let hex = hashcode(d.id).toString(16);
+  let hex = Math.abs(hashcode(d.id)).toString(16);
   if (hex.length > 6) {
     hex = hex.slice(hex.length - 6, hex.length);
   } else if (hex.length < 6) {
@@ -313,12 +313,12 @@ const Root = styled.div`
 `;
 
 const LeftPanel = styled.div`
-  width: 30%;
+  width: 20%;
   height: 90%;
 `;
 
 const RightPanel = styled.div`
-  width: 60%;
+  width: 70%;
   height: 90%;
 `;
 
