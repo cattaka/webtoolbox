@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import csvString from 'csv-string';
-import {convertCsv} from "../utils/csv-utils";
+import {convertCsv, parseCsvString} from "../utils/csv-utils";
 
 const exampleKeys1 = "key1,key2";
 const exampleValue1 = "key1,key2,value1,value2\nhoge1,hoge2,hoge3,hoge4\nfuga1,fuga2,fuga3,fuga4\nfoo1,foo2,foo3,foo4\nbar1,bar2,bar3,bar4";
@@ -125,9 +124,9 @@ const calculateDiff = (
   input1Str: string,
   input2Str: string
 ): MarkedTable => {
-  const keyColumns = csvString.parse(keyColumnsStr, separator, quote)[0];
-  const input1 = csvString.parse(input1Str, separator, quote);
-  const input2 = csvString.parse(input2Str, separator, quote);
+  const keyColumns = parseCsvString(keyColumnsStr, separator, quote)[0];
+  const input1 = parseCsvString(input1Str, separator, quote);
+  const input2 = parseCsvString(input2Str, separator, quote);
 
   const columns1 = input1[0];
   const columns2 = input2[0];
