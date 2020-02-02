@@ -4,6 +4,7 @@ import * as d3 from 'd3'
 import {convertCsv, parseCsvString} from "../utils/csv-utils";
 import {Simulation} from "d3";
 import {SimulationNodeDatum, SimulationLinkDatum} from "d3-force"
+import {hashcode} from "../utils/global-functions";
 
 const exampleValues = "source,target,value\nfoo,thud,5\nbar,foo,10\nfoobar,bar,15\nbaz,foobar,20\nqux,baz,15\nquux,qux,10\ncorge,quux,5\ngrault,corge,10\ngarply,grault,15\nwaldo,garply,20\nfred,thud,15\nplugh,fred,10\nxyzzy,plugh,5\nthud,xyzzy,10\ncorge,fred,5";
 
@@ -15,6 +16,7 @@ type State = {
   svgWidth: number;
   svgHeight: number;
   radiusBias: number;
+  linkLengthBias: number;
 };
 
 type NodeDatum = {
@@ -39,7 +41,8 @@ export default () => {
     quote: '"',
     svgWidth: 600,
     svgHeight: 600,
-    radiusBias: 40
+    radiusBias: 20,
+    linkLengthBias: 20
   } as State);
 
   const onChangeIgnoreFirstRow = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -80,22 +83,15 @@ export default () => {
 
   const onClickDraw = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     const data = parseInputValues(state.values, state.separator, state.quote, state.ignoreFirstRow, "sum", "sum");
+    data.nodes.forEach(n => { resetPosition(n, state.svgWidth, state.svgHeight); });
 
     const simulation = d3.forceSimulation<NodeDatum, LinkDatum>(data.nodes)
-      .force("link", d3.forceLink<NodeDatum, LinkDatum>(data.links).id(d => d.id))
+      .force("link", d3.forceLink<NodeDatum, LinkDatum>(data.links).distance(calcDistanceFunction(state.radiusBias, state.linkLengthBias)))
       .force("charge", d3.forceManyBody())
       .force("center", d3.forceCenter(state.svgWidth / 2, state.svgHeight / 2));
 
     const svg = d3.select("#my_svg");
     d3.selectAll("svg > *").remove();
-
-    const zoomed = function() {
-      svg.attr("transform", d3.event.transform);
-    };
-
-    svg.call(d3.zoom<any, any>()
-      .scaleExtent([1 / 2, 12])
-      .on("zoom", zoomed));
 
     const svgRoot = svg.append("g");
     const links = svgRoot
@@ -113,14 +109,25 @@ export default () => {
       .attr("stroke-width", 1.5)
       .join("g");
     const circles = nodes.append("circle")
-      .attr("r", d => state.radiusBias + Math.sqrt(d.value))
+      .attr("r", calcRadiusFunction(state.radiusBias))
       .attr("fill", createColorCallback())
       .call(createDragCallback(simulation))
     ;
     const texts = nodes.append("text")
       .attr("text-anchor", "middle")
       .attr("dominant-baseline", "central")
-      .text(d => d.id);
+      .attr("cursor", "default")
+      .attr("user-select", "none")
+      .text(d => d.id)
+      .call(createDragCallback(simulation))
+
+    const zoomed = function() {
+      svgRoot.attr("transform", d3.event.transform);
+    };
+
+    svg.call(d3.zoom<any, any>()
+      .scaleExtent([1 / 2, 12])
+      .on("zoom", zoomed));
 
     simulation.on("tick", () => {
       links
@@ -269,6 +276,28 @@ const parseInputValues = (
     nodes: nodes,
     links: links
   };
+};
+
+const calcRadiusFunction = (radiusBias: number) => {
+  return (node: NodeDatum) => (Math.sqrt(node.value) + radiusBias);
+};
+
+const calcDistanceFunction = (radiusBias: number, linkLengthBias: number) => {
+  const crf = calcRadiusFunction(radiusBias);
+  return (link: LinkDatum) => linkLengthBias
+    + (Math.sqrt(link.value)
+    + crf(link.source as NodeDatum)
+    + crf(link.target as NodeDatum));
+};
+
+const resetPosition = (node: NodeDatum, width: number, height: number) => {
+  // I just only need a fixed position for node.id.
+  const s = 65536;
+  const hash = Math.abs(hashcode(node.id));
+  const x = Math.floor(hash % s) / s;
+  const y = Math.floor((hash / s) % s) / s;
+  node.x = x * width;
+  node.y = y * height;
 };
 
 const Root = styled.div`
