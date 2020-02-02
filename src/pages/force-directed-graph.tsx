@@ -6,7 +6,7 @@ import {Simulation} from "d3";
 import {SimulationNodeDatum, SimulationLinkDatum} from "d3-force"
 import {hashcode} from "../utils/global-functions";
 
-const exampleValues = "source,target,value\nfoo,thud,5\nbar,foo,10\nfoobar,bar,15\nbaz,foobar,20\nqux,baz,15\nquux,qux,10\ncorge,quux,5\ngrault,corge,10\ngarply,grault,15\nwaldo,garply,20\nfred,thud,15\nplugh,fred,10\nxyzzy,plugh,5\nthud,xyzzy,10\ncorge,fred,5";
+const exampleValues = "source\ttarget\tvalue\nfoo\tthud\t5\nbar\tfoo\t10\nfoobar\tbar\t15\nbaz\tfoobar\t20\nqux\tbaz\t15\nquux\tqux\t10\ncorge\tquux\t5\ngrault\tcorge\t10\ngarply\tgrault\t15\nwaldo\tgarply\t20\nfred\tthud\t15\nplugh\tfred\t10\nxyzzy\tplugh\t5\nthud\txyzzy\t10\ncorge\tfred\t5";
 
 type State = {
   ignoreFirstRow: boolean,
@@ -16,7 +16,15 @@ type State = {
   svgWidth: number;
   svgHeight: number;
   radiusBias: number;
+  radiusFactor: number;
   linkLengthBias: number;
+  fontSize: number;
+  aggregateFunctionForNode: AggregateFunction,
+  simulation?: Simulation<NodeDatum, LinkDatum>;
+  data: {
+    nodes: NodeDatum[],
+    links: LinkDatum[]
+  }
 };
 
 type NodeDatum = {
@@ -29,7 +37,7 @@ type LinkDatum = {
   value: number,
 } & SimulationLinkDatum<NodeDatum>;
 
-type CalcFunction = "sum" | "min" | "max";
+type AggregateFunction = "sum" | "count" | "min" | "max" | "none";
 
 export default () => {
   const [ state, dispatchState ] = useState({
@@ -37,18 +45,74 @@ export default () => {
     values: exampleValues,
     markedTable: undefined,
     showOnlyDiff: false,
-    separator: ",",
+    separator: "\t",
     quote: '"',
     svgWidth: 600,
     svgHeight: 600,
     radiusBias: 20,
-    linkLengthBias: 20
+    radiusFactor: 0,
+    linkLengthBias: 20,
+    fontSize: 10,
+    aggregateFunctionForNode: "sum",
+    simulation: undefined,
+    data: { nodes: [], links: [] }
   } as State);
 
   const onChangeIgnoreFirstRow = (e: React.ChangeEvent<HTMLInputElement>) => {
     dispatchState({
       ...state,
       ignoreFirstRow: e.target.checked
+    });
+  };
+  const onChangeFontSize = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fontSize = parseFloat(e.target.value);
+    if (fontSize > 0 && !isNaN(fontSize)) {
+      d3.selectAll(".node > text").attr("font-size", fontSize + "pt");
+      dispatchState({
+        ...state,
+        fontSize: fontSize
+      });
+    }
+  };
+  const onChangeRadiusBias = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const radiusBias = parseFloat(e.target.value);
+    if (radiusBias > 0 && !isNaN(radiusBias)) {
+      d3.selectAll<any, NodeDatum>(".node > circle").attr("r", calcRadiusFunction(radiusBias, state.radiusFactor));
+      state.simulation?.force("force-link", d3.forceLink<NodeDatum, LinkDatum>(state.data.links).distance(calcDistanceFunction(radiusBias, state.radiusFactor, state.linkLengthBias)))
+      state.simulation?.alpha(0.5).restart();
+      dispatchState({
+        ...state,
+        radiusBias: radiusBias
+      });
+    }
+  };
+  const onChangeRadiusFactor = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const radiusFactor = parseFloat(e.target.value);
+    if (radiusFactor > 0 && !isNaN(radiusFactor)) {
+      d3.selectAll<any, NodeDatum>(".node > circle").attr("r", calcRadiusFunction(state.radiusBias, radiusFactor));
+      state.simulation?.force("force-link", d3.forceLink<NodeDatum, LinkDatum>(state.data.links).distance(calcDistanceFunction(state.radiusBias, radiusFactor, state.linkLengthBias)))
+      state.simulation?.alpha(0.5).restart();
+      dispatchState({
+        ...state,
+        radiusFactor: radiusFactor
+      });
+    }
+  };
+  const onChangeLinkLengthBias = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const linkLengthBias = parseFloat(e.target.value);
+    if (linkLengthBias > 0 && !isNaN(linkLengthBias)) {
+      state.simulation?.force("force-link", d3.forceLink<NodeDatum, LinkDatum>(state.data.links).distance(calcDistanceFunction(state.radiusBias, state.radiusFactor, linkLengthBias)))
+      state.simulation?.alpha(0.5).restart();
+      dispatchState({
+        ...state,
+        linkLengthBias: linkLengthBias
+      });
+    }
+  };
+  const onChangeAggregateFunctionForNode = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    dispatchState({
+      ...state,
+      aggregateFunctionForNode: e.target.value as AggregateFunction
     });
   };
   const onChangeSeparator = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -82,13 +146,13 @@ export default () => {
   }, []);
 
   const onClickDraw = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-    const data = parseInputValues(state.values, state.separator, state.quote, state.ignoreFirstRow, "sum", "sum");
+    const data = parseInputValues(state.values, state.separator, state.quote, state.ignoreFirstRow, state.aggregateFunctionForNode);
     data.nodes.forEach(n => { resetPosition(n, state.svgWidth, state.svgHeight); });
 
     const simulation = d3.forceSimulation<NodeDatum, LinkDatum>(data.nodes)
-      .force("link", d3.forceLink<NodeDatum, LinkDatum>(data.links).distance(calcDistanceFunction(state.radiusBias, state.linkLengthBias)))
-      .force("charge", d3.forceManyBody())
-      .force("center", d3.forceCenter(state.svgWidth / 2, state.svgHeight / 2));
+      .force("force-link", d3.forceLink<NodeDatum, LinkDatum>(data.links).distance(calcDistanceFunction(state.radiusBias, state.radiusFactor, state.linkLengthBias)))
+      .force("force-charge", d3.forceManyBody())
+      .force("force-center", d3.forceCenter(state.svgWidth / 2, state.svgHeight / 2));
 
     const svg = d3.select("#my_svg");
     d3.selectAll("svg > *").remove();
@@ -98,6 +162,7 @@ export default () => {
       .selectAll("line")
       .data(data.links)
       .join("line")
+      .attr("class", "link")
       .attr("stroke", "#999")
       .attr("stroke-opacity", 0.6)
       .attr("stroke-width", d => Math.sqrt(d.value));
@@ -105,13 +170,14 @@ export default () => {
     const nodes = svgRoot
       .selectAll("circle")
       .data(data.nodes)
-      .attr("stroke", "#fff")
-      .attr("stroke-width", 1.5)
-      .join("g");
+      .join("g")
+      .attr("class", "node");
 
     const circles = nodes.append("circle")
-      .attr("r", calcRadiusFunction(state.radiusBias))
+      .attr("r", calcRadiusFunction(state.radiusBias, state.radiusFactor))
       .attr("fill", createColorFunction)
+      .attr("stroke", "#fff")
+      .attr("stroke-width", 1.5)
       .call(createDragCallback(simulation))
     ;
     const texts = nodes.append("text")
@@ -119,6 +185,7 @@ export default () => {
       .attr("dominant-baseline", "central")
       .attr("cursor", "default")
       .attr("user-select", "none")
+      .attr("font-size", state.fontSize + "pt")
       .text(d => d.id)
       .call(createDragCallback(simulation))
 
@@ -143,14 +210,16 @@ export default () => {
         .attr("x", d => d.x ?? 0)
         .attr("y", d => d.y ?? 0);
     });
+    dispatchState({
+      ...state,
+      simulation: simulation,
+      data: data
+    })
   };
 
   return <Root>
     <LeftPanel>
-      <div>
-        <input type="checkbox" name={"ignoreFirstRow"} onChange={onChangeIgnoreFirstRow} checked={state.ignoreFirstRow} />
-        <label htmlFor="ignoreFirstRow">Ignore first row (e.g. labels)</label>
-      </div>
+      <h2>Import option</h2>
       <div>
         <label htmlFor="separator">Separator of input:</label>
         <select name={"separator"} defaultValue={state.separator} onChange={onChangeSeparator}>
@@ -166,7 +235,38 @@ export default () => {
         </select>
       </div>
       <div>
+        <label htmlFor="aggregateFunctionForNode">Aggregate function for node</label>
+        <select name={"aggregateFunctionForNode"} onChange={onChangeAggregateFunctionForNode} value={state.aggregateFunctionForNode}>
+          <option value={"sum"}>sum</option>
+          <option value={"count"}>count</option>
+          <option value={"max"}>max</option>
+          <option value={"min"}>min</option>
+          <option value={"none"}>none</option>
+        </select>
+      </div>
+      <div>
         <ValuesTextArea onChange={onChangeValuesText} value={state.values} />
+      </div>
+      <h2>Graph option</h2>
+      <div>
+        <label htmlFor="ignoreFirstRow">Ignore first row (e.g. labels)</label>
+        <input type="checkbox" name={"ignoreFirstRow"} onChange={onChangeIgnoreFirstRow} checked={state.ignoreFirstRow} />
+      </div>
+      <div>
+        <label htmlFor="fontSize">Font size</label>
+        <NumberInput type="number" name={"fontSize"} onChange={onChangeFontSize} value={state.fontSize} />
+      </div>
+      <div>
+        <label htmlFor="radiusBias">Radius bias</label>
+        <NumberInput type="number" name={"radiusBias"} onChange={onChangeRadiusBias} value={state.radiusBias} />
+      </div>
+      <div>
+        <label htmlFor="radiusFactor">Radius factor</label>
+        <NumberInput type="number" name={"radiusFactor"} onChange={onChangeRadiusFactor} value={state.radiusFactor} />
+      </div>
+      <div>
+        <label htmlFor="linkLengthBiasradiusBias">Link length bias</label>
+        <NumberInput type="number" name={"linkLengthBias"} onChange={onChangeLinkLengthBias} value={state.linkLengthBias} />
       </div>
       <ExecButton onClick={onClickDraw}>Draw</ExecButton>
     </LeftPanel>
@@ -216,8 +316,7 @@ const parseInputValues = (
   separator: string,
   quote: string,
   ignoreFirstRow: boolean,
-  nodeValueCalcFunction: CalcFunction,
-  linkValueCalcFunction: CalcFunction
+  aggregateFunctionForNode: AggregateFunction
 ) => {
   let csv = parseCsvString(str, separator, quote);
   if (ignoreFirstRow) {
@@ -267,8 +366,19 @@ const parseInputValues = (
       const sourceNode = name2Node.get(sourceId);
       const targetNode = name2Node.get(targetId);
       if (sourceNode && targetNode) {
-        sourceNode.value += value;
-        targetNode.value += value;
+        if (aggregateFunctionForNode === "sum") {
+          sourceNode.value += value;
+          targetNode.value += value;
+        } else if (aggregateFunctionForNode === "count") {
+          sourceNode.value += 1;
+          targetNode.value += 1;
+        } else if (aggregateFunctionForNode === "max") {
+          sourceNode.value = Math.max(value, sourceNode.value);
+          targetNode.value = Math.max(value, targetNode.value);
+        } else if (aggregateFunctionForNode === "min") {
+          sourceNode.value = Math.min(value, sourceNode.value);
+          targetNode.value = Math.min(value, targetNode.value);
+        }
         links.push({
           source: sourceNode,
           target: targetNode,
@@ -284,13 +394,13 @@ const parseInputValues = (
   };
 };
 
-const calcRadiusFunction = (radiusBias: number) => {
-  return (node: NodeDatum) => (Math.sqrt(node.value) + radiusBias);
+const calcRadiusFunction = (radiusBias: number, radiusFactor: number) => {
+  return (node: NodeDatum) => (Math.sqrt(node.value) * radiusFactor + radiusBias);
 };
 
-const calcDistanceFunction = (radiusBias: number, linkLengthBias: number) => {
-  const crf = calcRadiusFunction(radiusBias);
-  return (link: LinkDatum) => linkLengthBias
+const calcDistanceFunction = (radiusBias: number, radiusFactor: number, linkLengthBias: number) => {
+  const crf = calcRadiusFunction(radiusBias, radiusFactor);
+  return (link: LinkDatum) => linkLengthBias * 2
     + (Math.sqrt(link.value)
     + crf(link.source as NodeDatum)
     + crf(link.target as NodeDatum));
@@ -314,17 +424,21 @@ const Root = styled.div`
 
 const LeftPanel = styled.div`
   width: 20%;
-  height: 90%;
+  height: 100%;
 `;
 
 const RightPanel = styled.div`
-  width: 70%;
-  height: 90%;
+  width: 80%;
+  height: 100%;
 `;
 
 const ValuesTextArea = styled.textarea`
   width: 90%;
   height: 30em;
+`;
+
+const NumberInput = styled.input`
+  width: 5em;
 `;
 
 const ExecButton = styled.button`
