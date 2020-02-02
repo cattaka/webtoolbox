@@ -5,7 +5,7 @@ import {convertCsv, parseCsvString} from "../utils/csv-utils";
 import {Simulation} from "d3";
 import {SimulationNodeDatum, SimulationLinkDatum} from "d3-force"
 
-const exampleValues = "key1,key2,value\na,b,100\nb,c,50,\nc,a,10";
+const exampleValues = "source,target,value\nfoo,thud,5\nbar,foo,10\nfoobar,bar,15\nbaz,foobar,20\nqux,baz,15\nquux,qux,10\ncorge,quux,5\ngrault,corge,10\ngarply,grault,15\nwaldo,garply,20\nfred,thud,15\nplugh,fred,10\nxyzzy,plugh,5\nthud,xyzzy,10\ncorge,fred,5";
 
 type State = {
   ignoreFirstRow: boolean,
@@ -14,6 +14,7 @@ type State = {
   quote: string;
   svgWidth: number;
   svgHeight: number;
+  radiusBias: number;
 };
 
 type NodeDatum = {
@@ -37,7 +38,8 @@ export default () => {
     separator: ",",
     quote: '"',
     svgWidth: 600,
-    svgHeight: 600
+    svgHeight: 600,
+    radiusBias: 40
   } as State);
 
   const onChangeIgnoreFirstRow = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -46,7 +48,6 @@ export default () => {
       ignoreFirstRow: e.target.checked
     });
   };
-
   const onChangeSeparator = (e: React.ChangeEvent<HTMLSelectElement>) => {
     dispatchState({
       ...state,
@@ -96,31 +97,29 @@ export default () => {
       .scaleExtent([1 / 2, 12])
       .on("zoom", zoomed));
 
-    const links = svg.append("g")
-      .attr("stroke", "#999")
-      .attr("stroke-opacity", 0.6)
+    const svgRoot = svg.append("g");
+    const links = svgRoot
       .selectAll("line")
       .data(data.links)
       .join("line")
+      .attr("stroke", "#999")
+      .attr("stroke-opacity", 0.6)
       .attr("stroke-width", d => Math.sqrt(d.value));
 
-    const nodes = svg.append("g")
-      .attr("stroke", "#fff")
-      .attr("stroke-width", 1.5)
+    const nodes = svgRoot
       .selectAll("circle")
       .data(data.nodes)
-      .join("circle")
-      .attr("r", d => Math.sqrt(d.value))
+      .attr("stroke", "#fff")
+      .attr("stroke-width", 1.5)
+      .join("g");
+    const circles = nodes.append("circle")
+      .attr("r", d => state.radiusBias + Math.sqrt(d.value))
       .attr("fill", createColorCallback())
       .call(createDragCallback(simulation))
     ;
-    // nodes.join("text")
-    //   .attr("text-anchor", "middle")
-    //   .text(d => d.id)
-    //
-    // ;
-
-    nodes.append("title")
+    const texts = nodes.append("text")
+      .attr("text-anchor", "middle")
+      .attr("dominant-baseline", "central")
       .text(d => d.id);
 
     simulation.on("tick", () => {
@@ -129,9 +128,12 @@ export default () => {
         .attr("y1", d => (d.source as any).y)
         .attr("x2", d => (d.target as any).x)
         .attr("y2", d => (d.target as any).y);
-      nodes
+      circles
         .attr("cx", d => d.x ?? 0)
         .attr("cy", d => d.y ?? 0);
+      texts
+        .attr("x", d => d.x ?? 0)
+        .attr("y", d => d.y ?? 0);
     });
   };
 
