@@ -11,6 +11,7 @@ import Home from './pages/home'
 import DiffCsv from './pages/diff-csv'
 import FormatJson from './pages/format-json'
 import PullByRegex from './pages/pull-by-regex'
+import ForceDirectedGraph from './pages/force-directed-graph'
 import About from './pages/about'
 import Page from "./components/Page";
 
@@ -33,6 +34,9 @@ const App: React.FC = () => {
               <Link to="/pull-by-regex">Pull by regex</Link>
             </li>
             <li>
+              <Link to="/force-directed-graph">Force directed graph</Link>
+            </li>
+            <li>
               <Link to="/about">About</Link>
             </li>
           </ul>
@@ -47,6 +51,9 @@ const App: React.FC = () => {
             </Route>
             <Route path="/pull-by-regex">
               <Page title={'Pull by regex - WebToolbox'}><PullByRegex /></Page>
+            </Route>
+            <Route path="/force-directed-graph">
+              <Page title={'Force directed graph - WebToolbox'}><ForceDirectedGraph /></Page>
             </Route>
             <Route path="/about">
               <Page title={'About - WebToolbox'}><About /></Page>
