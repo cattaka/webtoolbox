@@ -18,6 +18,7 @@ type State = {
   radiusBias: number;
   radiusFactor: number;
   linkLengthBias: number;
+  linkLengthFactor: number;
   fontSize: number;
   aggregateFunctionForNode: AggregateFunction,
   simulation?: Simulation<NodeDatum, LinkDatum>;
@@ -52,6 +53,7 @@ export default () => {
     radiusBias: 20,
     radiusFactor: 0,
     linkLengthBias: 20,
+    linkLengthFactor: 0,
     fontSize: 10,
     aggregateFunctionForNode: "sum",
     simulation: undefined,
@@ -78,7 +80,7 @@ export default () => {
     const radiusBias = parseFloat(e.target.value);
     if (radiusBias > 0 && !isNaN(radiusBias)) {
       d3.selectAll<any, NodeDatum>(".node > circle").attr("r", calcRadiusFunction(radiusBias, state.radiusFactor));
-      state.simulation?.force("force-link", d3.forceLink<NodeDatum, LinkDatum>(state.data.links).distance(calcDistanceFunction(radiusBias, state.radiusFactor, state.linkLengthBias)))
+      state.simulation?.force("force-link", d3.forceLink<NodeDatum, LinkDatum>(state.data.links).distance(calcDistanceFunction(radiusBias, state.radiusFactor, state.linkLengthBias, state.linkLengthFactor)))
       state.simulation?.alpha(0.5).restart();
       dispatchState({
         ...state,
@@ -90,7 +92,7 @@ export default () => {
     const radiusFactor = parseFloat(e.target.value);
     if (radiusFactor > 0 && !isNaN(radiusFactor)) {
       d3.selectAll<any, NodeDatum>(".node > circle").attr("r", calcRadiusFunction(state.radiusBias, radiusFactor));
-      state.simulation?.force("force-link", d3.forceLink<NodeDatum, LinkDatum>(state.data.links).distance(calcDistanceFunction(state.radiusBias, radiusFactor, state.linkLengthBias)))
+      state.simulation?.force("force-link", d3.forceLink<NodeDatum, LinkDatum>(state.data.links).distance(calcDistanceFunction(state.radiusBias, radiusFactor, state.linkLengthBias, state.linkLengthFactor)))
       state.simulation?.alpha(0.5).restart();
       dispatchState({
         ...state,
@@ -101,11 +103,22 @@ export default () => {
   const onChangeLinkLengthBias = (e: React.ChangeEvent<HTMLInputElement>) => {
     const linkLengthBias = parseFloat(e.target.value);
     if (linkLengthBias > 0 && !isNaN(linkLengthBias)) {
-      state.simulation?.force("force-link", d3.forceLink<NodeDatum, LinkDatum>(state.data.links).distance(calcDistanceFunction(state.radiusBias, state.radiusFactor, linkLengthBias)))
+      state.simulation?.force("force-link", d3.forceLink<NodeDatum, LinkDatum>(state.data.links).distance(calcDistanceFunction(state.radiusBias, state.radiusFactor, linkLengthBias, state.linkLengthFactor)))
       state.simulation?.alpha(0.5).restart();
       dispatchState({
         ...state,
         linkLengthBias: linkLengthBias
+      });
+    }
+  };
+  const onChangeLinkLengthFactor = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const linkLengthFactor = parseFloat(e.target.value);
+    if (linkLengthFactor > 0 && !isNaN(linkLengthFactor)) {
+      state.simulation?.force("force-link", d3.forceLink<NodeDatum, LinkDatum>(state.data.links).distance(calcDistanceFunction(state.radiusBias, state.radiusFactor, state.linkLengthBias, linkLengthFactor)))
+      state.simulation?.alpha(0.5).restart();
+      dispatchState({
+        ...state,
+        linkLengthFactor: linkLengthFactor
       });
     }
   };
@@ -150,7 +163,7 @@ export default () => {
     data.nodes.forEach(n => { resetPosition(n, state.svgWidth, state.svgHeight); });
 
     const simulation = d3.forceSimulation<NodeDatum, LinkDatum>(data.nodes)
-      .force("force-link", d3.forceLink<NodeDatum, LinkDatum>(data.links).distance(calcDistanceFunction(state.radiusBias, state.radiusFactor, state.linkLengthBias)))
+      .force("force-link", d3.forceLink<NodeDatum, LinkDatum>(data.links).distance(calcDistanceFunction(state.radiusBias, state.radiusFactor, state.linkLengthBias, state.linkLengthFactor)))
       .force("force-charge", d3.forceManyBody())
       .force("force-center", d3.forceCenter(state.svgWidth / 2, state.svgHeight / 2));
 
@@ -265,8 +278,12 @@ export default () => {
         <NumberInput type="number" name={"radiusFactor"} onChange={onChangeRadiusFactor} value={state.radiusFactor} />
       </div>
       <div>
-        <label htmlFor="linkLengthBiasradiusBias">Link length bias</label>
+        <label htmlFor="linkLengthBias">Link length bias</label>
         <NumberInput type="number" name={"linkLengthBias"} onChange={onChangeLinkLengthBias} value={state.linkLengthBias} />
+      </div>
+      <div>
+        <label htmlFor="linkLengthFactor">Link length factor</label>
+        <NumberInput type="number" name={"linkLengthFactor"} onChange={onChangeLinkLengthFactor} value={state.linkLengthFactor} />
       </div>
       <ExecButton onClick={onClickDraw}>Draw</ExecButton>
     </LeftPanel>
@@ -398,12 +415,12 @@ const calcRadiusFunction = (radiusBias: number, radiusFactor: number) => {
   return (node: NodeDatum) => (Math.sqrt(node.value) * radiusFactor + radiusBias);
 };
 
-const calcDistanceFunction = (radiusBias: number, radiusFactor: number, linkLengthBias: number) => {
+const calcDistanceFunction = (radiusBias: number, radiusFactor: number, linkLengthBias: number, linkLengthFactor: number) => {
   const crf = calcRadiusFunction(radiusBias, radiusFactor);
-  return (link: LinkDatum) => linkLengthBias * 2
-    + (Math.sqrt(link.value)
+  return (link: LinkDatum) => linkLengthBias
+    + (Math.sqrt(link.value) * linkLengthFactor)
     + crf(link.source as NodeDatum)
-    + crf(link.target as NodeDatum));
+    + crf(link.target as NodeDatum);
 };
 
 const resetPosition = (node: NodeDatum, width: number, height: number) => {
