@@ -78,10 +78,7 @@ export default () => {
   };
   const onChangeRadiusBias = (e: React.ChangeEvent<HTMLInputElement>) => {
     const radiusBias = parseFloat(e.target.value);
-    if (radiusBias > 0 && !isNaN(radiusBias)) {
-      d3.selectAll<any, NodeDatum>(".node > circle").attr("r", calcRadiusFunction(radiusBias, state.radiusFactor));
-      state.simulation?.force("force-link", d3.forceLink<NodeDatum, LinkDatum>(state.data.links).distance(calcDistanceFunction(radiusBias, state.radiusFactor, state.linkLengthBias, state.linkLengthFactor)))
-      state.simulation?.alpha(0.5).restart();
+    if (!isNaN(radiusBias)) {
       dispatchState({
         ...state,
         radiusBias: radiusBias
@@ -91,9 +88,6 @@ export default () => {
   const onChangeRadiusFactor = (e: React.ChangeEvent<HTMLInputElement>) => {
     const radiusFactor = parseFloat(e.target.value);
     if (!isNaN(radiusFactor)) {
-      d3.selectAll<any, NodeDatum>(".node > circle").attr("r", calcRadiusFunction(state.radiusBias, radiusFactor));
-      state.simulation?.force("force-link", d3.forceLink<NodeDatum, LinkDatum>(state.data.links).distance(calcDistanceFunction(state.radiusBias, radiusFactor, state.linkLengthBias, state.linkLengthFactor)))
-      state.simulation?.alpha(0.5).restart();
       dispatchState({
         ...state,
         radiusFactor: radiusFactor
@@ -102,9 +96,7 @@ export default () => {
   };
   const onChangeLinkLengthBias = (e: React.ChangeEvent<HTMLInputElement>) => {
     const linkLengthBias = parseFloat(e.target.value);
-    if (linkLengthBias > 0 && !isNaN(linkLengthBias)) {
-      state.simulation?.force("force-link", d3.forceLink<NodeDatum, LinkDatum>(state.data.links).distance(calcDistanceFunction(state.radiusBias, state.radiusFactor, linkLengthBias, state.linkLengthFactor)))
-      state.simulation?.alpha(0.5).restart();
+    if (!isNaN(linkLengthBias)) {
       dispatchState({
         ...state,
         linkLengthBias: linkLengthBias
@@ -114,8 +106,6 @@ export default () => {
   const onChangeLinkLengthFactor = (e: React.ChangeEvent<HTMLInputElement>) => {
     const linkLengthFactor = parseFloat(e.target.value);
     if (!isNaN(linkLengthFactor)) {
-      state.simulation?.force("force-link", d3.forceLink<NodeDatum, LinkDatum>(state.data.links).distance(calcDistanceFunction(state.radiusBias, state.radiusFactor, state.linkLengthBias, linkLengthFactor)))
-      state.simulation?.alpha(0.5).restart();
       dispatchState({
         ...state,
         linkLengthFactor: linkLengthFactor
@@ -157,6 +147,16 @@ export default () => {
       svgHeight: parentRect.height
     });
   }, []);
+
+  useEffect(() => {
+    d3.selectAll<any, NodeDatum>(".node > circle").attr("r", calcRadiusFunction(state.radiusBias, state.radiusFactor));
+  }, [state.radiusBias, state.radiusFactor]);
+
+  useEffect(() => {
+    d3.selectAll<any, NodeDatum>(".node > circle").attr("r", calcRadiusFunction(state.radiusBias, state.radiusFactor));
+    state.simulation?.force("force-link", d3.forceLink<NodeDatum, LinkDatum>(state.data.links).distance(calcDistanceFunction(state.radiusBias, state.radiusFactor, state.linkLengthBias, state.linkLengthFactor)))
+    state.simulation?.alpha(0.5).restart();
+  }, [state.radiusBias, state.radiusFactor, state.linkLengthBias, state.linkLengthFactor]);
 
   const onClickDraw = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     const data = parseInputValues(state.values, state.separator, state.quote, state.ignoreFirstRow, state.aggregateFunctionForNode);
