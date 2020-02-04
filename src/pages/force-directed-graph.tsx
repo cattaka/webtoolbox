@@ -164,8 +164,8 @@ export default () => {
 
     const simulation = d3.forceSimulation<NodeDatum, LinkDatum>(data.nodes)
       .force("force-link", d3.forceLink<NodeDatum, LinkDatum>(data.links).distance(calcDistanceFunction(state.radiusBias, state.radiusFactor, state.linkLengthBias, state.linkLengthFactor)))
-      .force("force-charge", d3.forceManyBody())
-      .force("force-center", d3.forceCenter(state.svgWidth / 2, state.svgHeight / 2));
+      .force("force-charge", d3.forceManyBody<NodeDatum>())
+      .force("force-center", d3.forceCenter<NodeDatum>(state.svgWidth / 2, state.svgHeight / 2));
 
     const svg = d3.select("#my_svg");
     d3.selectAll("svg > *").remove();
