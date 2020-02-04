@@ -19,6 +19,8 @@ type State = {
   radiusFactor: number;
   linkLengthBias: number;
   linkLengthFactor: number;
+  linkWidthBias: number;
+  linkWidthFactor: number;
   fontSize: number;
   aggregateFunctionForNode: AggregateFunction,
   simulation?: Simulation<NodeDatum, LinkDatum>;
@@ -54,6 +56,8 @@ export default () => {
     radiusFactor: 0,
     linkLengthBias: 20,
     linkLengthFactor: 0,
+    linkWidthBias: 2,
+    linkWidthFactor: 0,
     fontSize: 10,
     aggregateFunctionForNode: "sum",
     simulation: undefined,
@@ -86,6 +90,14 @@ export default () => {
   const onChangeLinkLengthFactor = createCallback(state, dispatchState, (e) => {
     const linkLengthFactor = parseFloat(e.target.value);
     return (!isNaN(linkLengthFactor)) ? {linkLengthFactor: linkLengthFactor} : undefined;
+  });
+  const onChangeLinkWidthBias = createCallback(state, dispatchState, (e) => {
+    const linkWidthBias = parseFloat(e.target.value);
+    return (!isNaN(linkWidthBias)) ? {linkWidthBias: linkWidthBias} : undefined;
+  });
+  const onChangeLinkWidthFactor = createCallback(state, dispatchState, (e) => {
+    const linkWidthFactor = parseFloat(e.target.value);
+    return (!isNaN(linkWidthFactor)) ? {linkWidthFactor: linkWidthFactor} : undefined;
   });
   const onChangeAggregateFunctionForNode = createCallback(state, dispatchState, (e) => {
     return {aggregateFunctionForNode: e.target.value as AggregateFunction};
@@ -128,6 +140,14 @@ export default () => {
     state.simulation?.alpha(0.5).restart();
   }, [state.radiusBias, state.radiusFactor, state.linkLengthBias, state.linkLengthFactor]);
 
+  useEffect(() => {
+    d3.selectAll(".node > text").attr("font-size", state.fontSize + "pt");
+  }, [state.fontSize]);
+
+  useEffect(() => {
+    d3.selectAll<any, LinkDatum>(".link").attr("stroke-width", calcLinkWidthFunction(state.linkWidthBias, state.linkWidthFactor));
+  }, [state.linkWidthBias, state.linkWidthFactor]);
+
   const onClickDraw = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     const data = parseInputValues(state.values, state.separator, state.quote, state.ignoreFirstRow, state.aggregateFunctionForNode);
     data.nodes.forEach(n => { resetPosition(n, state.svgWidth, state.svgHeight); });
@@ -148,7 +168,7 @@ export default () => {
       .attr("class", "link")
       .attr("stroke", "#999")
       .attr("stroke-opacity", 0.6)
-      .attr("stroke-width", d => Math.sqrt(d.value));
+      .attr("stroke-width", calcLinkWidthFunction(state.linkWidthBias, state.linkWidthFactor));
 
     const nodes = svgRoot
       .selectAll("circle")
@@ -254,6 +274,14 @@ export default () => {
       <div>
         <label htmlFor="linkLengthFactor">Link length factor</label>
         <NumberInput type="number" name={"linkLengthFactor"} onChange={onChangeLinkLengthFactor} value={state.linkLengthFactor} />
+      </div>
+      <div>
+        <label htmlFor="linkWidthBias">Link width bias</label>
+        <NumberInput type="number" name={"linkWidthBias"} onChange={onChangeLinkWidthBias} value={state.linkWidthBias} />
+      </div>
+      <div>
+        <label htmlFor="linkWidthFactor">Link width factor</label>
+        <NumberInput type="number" name={"linkWidthFactor"} onChange={onChangeLinkWidthFactor} value={state.linkWidthFactor} />
       </div>
       <ExecButton onClick={onClickDraw}>Draw</ExecButton>
     </LeftPanel>
@@ -391,6 +419,10 @@ const calcDistanceFunction = (radiusBias: number, radiusFactor: number, linkLeng
     + (Math.sqrt(link.value) * linkLengthFactor)
     + crf(link.source as NodeDatum)
     + crf(link.target as NodeDatum);
+};
+
+const calcLinkWidthFunction = (linkWidthBias: number, linkWidthFactor: number) => {
+  return (link: LinkDatum) => (Math.sqrt(link.value) * linkWidthFactor + linkWidthBias);
 };
 
 const resetPosition = (node: NodeDatum, width: number, height: number) => {
