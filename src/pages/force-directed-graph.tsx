@@ -66,72 +66,42 @@ export default () => {
       ignoreFirstRow: e.target.checked
     });
   };
-  const onChangeFontSize = (e: React.ChangeEvent<HTMLInputElement>) => {
+
+  const onChangeFontSize = createCallback(state, dispatchState, (e) => {
     const fontSize = parseFloat(e.target.value);
-    if (fontSize > 0 && !isNaN(fontSize)) {
-      d3.selectAll(".node > text").attr("font-size", fontSize + "pt");
-      dispatchState({
-        ...state,
-        fontSize: fontSize
-      });
-    }
-  };
-  const onChangeRadiusBias = (e: React.ChangeEvent<HTMLInputElement>) => {
+    return (fontSize > 0 && !isNaN(fontSize)) ? {fontSize: fontSize} : undefined;
+  });
+  const onChangeRadiusBias = createCallback(state, dispatchState, (e) => {
     const radiusBias = parseFloat(e.target.value);
-    if (!isNaN(radiusBias)) {
-      dispatchState({
-        ...state,
-        radiusBias: radiusBias
-      });
-    }
-  };
-  const onChangeRadiusFactor = (e: React.ChangeEvent<HTMLInputElement>) => {
+    return (!isNaN(radiusBias)) ? {radiusBias: radiusBias} : undefined;
+  });
+  const onChangeRadiusFactor = createCallback(state, dispatchState, (e) => {
     const radiusFactor = parseFloat(e.target.value);
-    if (!isNaN(radiusFactor)) {
-      dispatchState({
-        ...state,
-        radiusFactor: radiusFactor
-      });
-    }
-  };
-  const onChangeLinkLengthBias = (e: React.ChangeEvent<HTMLInputElement>) => {
+    return (!isNaN(radiusFactor)) ? {radiusFactor: radiusFactor} : undefined;
+  });
+  const onChangeLinkLengthBias = createCallback(state, dispatchState, (e) => {
     const linkLengthBias = parseFloat(e.target.value);
-    if (!isNaN(linkLengthBias)) {
-      dispatchState({
-        ...state,
-        linkLengthBias: linkLengthBias
-      });
-    }
-  };
-  const onChangeLinkLengthFactor = (e: React.ChangeEvent<HTMLInputElement>) => {
+    return (!isNaN(linkLengthBias)) ? {linkLengthBias: linkLengthBias} : undefined;
+  });
+  const onChangeLinkLengthFactor = createCallback(state, dispatchState, (e) => {
     const linkLengthFactor = parseFloat(e.target.value);
-    if (!isNaN(linkLengthFactor)) {
-      dispatchState({
-        ...state,
-        linkLengthFactor: linkLengthFactor
-      });
-    }
-  };
-  const onChangeAggregateFunctionForNode = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    dispatchState({
-      ...state,
-      aggregateFunctionForNode: e.target.value as AggregateFunction
-    });
-  };
-  const onChangeSeparator = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    dispatchState({
-      ...state,
+    return (!isNaN(linkLengthFactor)) ? {linkLengthFactor: linkLengthFactor} : undefined;
+  });
+  const onChangeAggregateFunctionForNode = createCallback(state, dispatchState, (e) => {
+    return {aggregateFunctionForNode: e.target.value as AggregateFunction};
+  });
+  const onChangeSeparator = createCallback(state, dispatchState, (e) => {
+    return {
       separator: e.target.value,
       values: convertCsv(state.values, state.separator, state.quote, e.target.value, state.quote),
-    });
-  };
-  const onChangeQuote = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    dispatchState({
-      ...state,
+    };
+  });
+  const onChangeQuote = createCallback(state, dispatchState, (e) => {
+    return {
       quote: e.target.value,
       values: convertCsv(state.values, state.separator, state.quote, e.target.value, state.quote),
-    });
-  };
+    };
+  });
   const onChangeValuesText = (e: React.ChangeEvent<HTMLTextAreaElement>) => { dispatchState({ ...state, values: e.target.value }); };
 
   useEffect(() => {
@@ -431,6 +401,22 @@ const resetPosition = (node: NodeDatum, width: number, height: number) => {
   const y = Math.floor((hash / s) % s) / s;
   node.x = x * width;
   node.y = y * height;
+};
+
+const createCallback = (
+  state: State,
+  dispatchState: (state: State) => void,
+  f: (e: React.ChangeEvent<HTMLInputElement|HTMLSelectElement>) => (Partial<State> | undefined)
+): (e: React.ChangeEvent<HTMLInputElement|HTMLSelectElement>) => void => {
+  return (e: React.ChangeEvent<HTMLInputElement|HTMLSelectElement>) => {
+    const newState = f(e);
+    if (newState) {
+      dispatchState({
+        ...state,
+        ...f(e)
+      });
+    }
+  }
 };
 
 const Root = styled.div`
