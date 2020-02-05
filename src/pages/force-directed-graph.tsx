@@ -21,6 +21,8 @@ type State = {
   linkLengthFactor: number;
   linkWidthBias: number;
   linkWidthFactor: number;
+  linkStrengthBias: number;
+  linkStrengthFactor: number;
   fontSize: number;
   aggregateFunctionForNode: AggregateFunction,
   simulation?: Simulation<NodeDatum, LinkDatum>;
@@ -58,6 +60,8 @@ export default () => {
     linkLengthFactor: 0,
     linkWidthBias: 2,
     linkWidthFactor: 0,
+    linkStrengthBias: 1,
+    linkStrengthFactor: 0,
     fontSize: 10,
     aggregateFunctionForNode: "sum",
     simulation: undefined,
@@ -99,6 +103,14 @@ export default () => {
     const linkWidthFactor = parseFloat(e.target.value);
     return (!isNaN(linkWidthFactor)) ? {linkWidthFactor: linkWidthFactor} : undefined;
   });
+  const onChangeLinkStrengthBias = createCallback(state, dispatchState, (e) => {
+    const linkStrengthBias = parseFloat(e.target.value);
+    return (!isNaN(linkStrengthBias)) ? {linkStrengthBias: linkStrengthBias} : undefined;
+  });
+  const onChangeLinkStrengthFactor = createCallback(state, dispatchState, (e) => {
+    const linkStrengthFactor = parseFloat(e.target.value);
+    return (!isNaN(linkStrengthFactor)) ? {linkStrengthFactor: linkStrengthFactor} : undefined;
+  });
   const onChangeAggregateFunctionForNode = createCallback(state, dispatchState, (e) => {
     return {aggregateFunctionForNode: e.target.value as AggregateFunction};
   });
@@ -136,7 +148,12 @@ export default () => {
 
   useEffect(() => {
     d3.selectAll<any, NodeDatum>(".node > circle").attr("r", calcRadiusFunction(state.radiusBias, state.radiusFactor));
-    state.simulation?.force("force-link", d3.forceLink<NodeDatum, LinkDatum>(state.data.links).distance(calcDistanceFunction(state.radiusBias, state.radiusFactor, state.linkLengthBias, state.linkLengthFactor)))
+    state.simulation?.force(
+      "force-link",
+      d3.forceLink<NodeDatum, LinkDatum>(state.data.links)
+        .distance(calcDistanceFunction(state.radiusBias, state.radiusFactor, state.linkLengthBias, state.linkLengthFactor))
+        .strength(calcStrengthFunction(state.linkStrengthBias, state.linkStrengthFactor))
+    );
     state.simulation?.alpha(0.5).restart();
   }, [state.radiusBias, state.radiusFactor, state.linkLengthBias, state.linkLengthFactor]);
 
@@ -153,7 +170,11 @@ export default () => {
     data.nodes.forEach(n => { resetPosition(n, state.svgWidth, state.svgHeight); });
 
     const simulation = d3.forceSimulation<NodeDatum, LinkDatum>(data.nodes)
-      .force("force-link", d3.forceLink<NodeDatum, LinkDatum>(data.links).distance(calcDistanceFunction(state.radiusBias, state.radiusFactor, state.linkLengthBias, state.linkLengthFactor)))
+      .force("force-link",
+        d3.forceLink<NodeDatum, LinkDatum>(data.links)
+          .distance(calcDistanceFunction(state.radiusBias, state.radiusFactor, state.linkLengthBias, state.linkLengthFactor))
+          .strength(calcStrengthFunction(state.linkStrengthBias, state.linkStrengthFactor))
+      )
       .force("force-charge", d3.forceManyBody<NodeDatum>())
       .force("force-center", d3.forceCenter<NodeDatum>(state.svgWidth / 2, state.svgHeight / 2));
 
@@ -282,6 +303,14 @@ export default () => {
       <div>
         <label htmlFor="linkWidthFactor">Link width factor</label>
         <NumberInput type="number" name={"linkWidthFactor"} onChange={onChangeLinkWidthFactor} value={state.linkWidthFactor} />
+      </div>
+      <div>
+        <label htmlFor="linkStrengthBias">Link strength bias</label>
+        <NumberInput type="number" name={"linkStrengthBias"} onChange={onChangeLinkStrengthBias} value={state.linkStrengthBias} />
+      </div>
+      <div>
+        <label htmlFor="linkStrengthFactor">Link strength factor</label>
+        <NumberInput type="number" name={"linkStrengthFactor"} onChange={onChangeLinkStrengthFactor} value={state.linkStrengthFactor} />
       </div>
       <ExecButton onClick={onClickDraw}>Draw</ExecButton>
     </LeftPanel>
@@ -419,6 +448,11 @@ const calcDistanceFunction = (radiusBias: number, radiusFactor: number, linkLeng
     + (Math.sqrt(link.value) * linkLengthFactor)
     + crf(link.source as NodeDatum)
     + crf(link.target as NodeDatum);
+};
+
+const calcStrengthFunction = (linkStrengthBias: number, linkStrengthFactor: number) => {
+  return (link: LinkDatum) => linkStrengthBias
+    + (Math.sqrt(link.value) * linkStrengthFactor)
 };
 
 const calcLinkWidthFunction = (linkWidthBias: number, linkWidthFactor: number) => {
