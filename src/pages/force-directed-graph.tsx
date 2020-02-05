@@ -155,7 +155,7 @@ export default () => {
         .strength(calcStrengthFunction(state.linkStrengthBias, state.linkStrengthFactor))
     );
     state.simulation?.alpha(0.5).restart();
-  }, [state.radiusBias, state.radiusFactor, state.linkLengthBias, state.linkLengthFactor]);
+  }, [state.radiusBias, state.radiusFactor, state.linkLengthBias, state.linkLengthFactor, state.linkStrengthBias, state.linkStrengthFactor]);
 
   useEffect(() => {
     d3.selectAll(".node > text").attr("font-size", state.fontSize + "pt");
@@ -222,6 +222,10 @@ export default () => {
       .on("zoom", zoomed));
 
     simulation.on("tick", () => {
+      data.nodes.forEach(node => {
+        node.x = Math.max(-10000, Math.min(node.x ?? 0, 10000));
+        node.y = Math.max(-10000, Math.min(node.y ?? 0, 10000));
+      });
       links
         .attr("x1", d => (d.source as any).x)
         .attr("y1", d => (d.source as any).y)
