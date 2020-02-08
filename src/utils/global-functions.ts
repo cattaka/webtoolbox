@@ -28,3 +28,11 @@ export const formatYyyyMmDdHhMmSs = (dt: Date): string  =>{
   const s = ("00" + dt.getSeconds()).slice(-2);
   return y + m + d + h + min + s;
 }
+
+export const binaryStringToUint8Array = (binary: string): Uint8Array => {
+  const array = new Uint8Array(binary.length)
+  for(let i = 0; i < binary.length; i++ ) {
+    array[i] = binary.charCodeAt(i);
+  }
+  return array;
+}

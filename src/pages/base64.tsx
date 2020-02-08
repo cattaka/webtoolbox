@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
+import {binaryStringToUint8Array, downloadFile, formatYyyyMmDdHhMmSs} from "../utils/global-functions";
 
 const exampleValue = 'Example text';
 
@@ -37,6 +38,21 @@ export default () => {
       dispatchState({ ...state, result: '', error: errorStr });
     }
   };
+
+  const onClickDecodeToFile = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+    try {
+      const binary = atob(state.value);
+      const array = binaryStringToUint8Array(binary);
+      const rawBlob = new Blob([array], { type: "application/octet-stream" });
+      const filename = `decoded-base64-${formatYyyyMmDdHhMmSs(new Date())}.bin`
+      dispatchState({ ...state, result: 'Exported to file', error: undefined });
+      downloadFile(filename, rawBlob);
+    } catch (e) {
+      const errorStr = (e.message) ? e.message.toString() : JSON.stringify(e);
+      dispatchState({ ...state, result: '', error: errorStr });
+    }
+  };
+
   const onClickSwap = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     const t = state.result;
     dispatchState({ ...state, value: t, result: state.value });
@@ -54,6 +70,7 @@ export default () => {
         <SwapButton onClick={onClickSwap}>↕Swap↕</SwapButton>
         <ExecButton onClick={onClickEncode}>Encode</ExecButton>
         <ExecButton onClick={onClickDecode}>Decode</ExecButton>
+        <ExecButton onClick={onClickDecodeToFile}>Decode to file</ExecButton>
       </ButtonArea>
       <ResultTextArea value={state.result} />
     </div>
@@ -75,7 +92,7 @@ const ButtonArea = styled.div`
 `;
 
 const ExecButton = styled.button`
-  width: 30%;
+  width: 20%;
   padding: 4pt;
 `;
 
