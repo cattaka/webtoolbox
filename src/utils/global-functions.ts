@@ -36,3 +36,33 @@ export const binaryStringToUint8Array = (binary: string): Uint8Array => {
   }
   return array;
 }
+
+export const readFileAsDataURL = (file: File): Promise<string> => {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const result = ev.target?.result;
+      if (result && typeof result === 'string') {
+        resolve(result);
+      } else {
+        reject(new Error("Loading of the file failed."));
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
+export const readFileAsBinaryString = (file: File): Promise<string> => {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const result = ev.target?.result;
+      if (result && typeof result === 'string') {
+        resolve(result);
+      } else {
+        reject(new Error("Loading of the file failed."));
+      }
+    };
+    reader.readAsBinaryString(file);
+  });
+};

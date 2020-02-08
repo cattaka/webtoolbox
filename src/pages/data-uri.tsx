@@ -1,5 +1,6 @@
 import React, {useState} from 'react';
 import styled from 'styled-components';
+import {readFileAsDataURL} from "../utils/global-functions";
 
 const exampleValue = 'Example text';
 
@@ -20,12 +21,11 @@ export default () => {
 
   const onClickEncode = async (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     const file = state.fileList && state.fileList[0];
-    console.log(file);
     if (!file) {
       return;
     }
     try {
-      const dataUri = await promiseFileReader(file);
+      const dataUri = await readFileAsDataURL(file);
       dispatchState({ ...state, result: dataUri, error: undefined });
     } catch (e) {
       const errorStr = (e.message) ? e.message.toString() : JSON.stringify(e);
@@ -52,22 +52,6 @@ export default () => {
     </div>
   </div>;
 }
-
-
-const promiseFileReader = (file: File) => {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = ev => {
-      const result = ev.target?.result;
-      if (result && typeof result === 'string') {
-        resolve(result);
-      } else {
-        reject(new Error("Loading of the file failed."));
-      }
-    };
-    reader.readAsDataURL(file);
-  });
-};
 
 const ResultTextArea = styled.textarea`
   width: 90%;
