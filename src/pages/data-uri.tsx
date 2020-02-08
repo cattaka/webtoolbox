@@ -1,73 +1,82 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import styled from 'styled-components';
 
 const exampleValue = 'Example text';
 
 type State = {
-  value: string;
+  fileList: FileList | null;
   result: string;
   error?: string;
 };
 
 export default () => {
-  const [ state, dispatchState ] = useState({
-    value: exampleValue,
-    result: '',
-    indent: 2
+  const [state, dispatchState] = useState({
+    result: ''
   } as State);
 
-  const onChangeValueText = (e: React.ChangeEvent<HTMLTextAreaElement>) => { dispatchState({ ...state, value: e.target.value }); };
-
-  const onClickEncode = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-    try {
-      const converted = encodeURIComponent(state.value);
-      dispatchState({ ...state, result: converted, error: undefined });
-    } catch (e) {
-      const errorStr = (e.message) ? e.message.toString() : JSON.stringify(e);
-      dispatchState({ ...state, result: '', error: errorStr });
-    }
+  const onChangeFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    dispatchState({...state, fileList: e.target.files});
   };
 
-  const onClickDecode = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+  const onClickEncode = async (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+    const file = state.fileList && state.fileList[0];
+    console.log(file);
+    if (!file) {
+      return;
+    }
     try {
-      const converted = decodeURIComponent(state.value);
-      dispatchState({ ...state, result: converted, error: undefined });
+      const dataUri = await promiseFileReader(file);
+      dispatchState({ ...state, result: dataUri, error: undefined });
     } catch (e) {
       const errorStr = (e.message) ? e.message.toString() : JSON.stringify(e);
-      dispatchState({ ...state, result: '', error: errorStr });
+      dispatchState({...state, result: '', error: errorStr});
     }
-  };
-  const onClickSwap = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-    const t = state.result;
-    dispatchState({ ...state, value: t, result: state.value });
   };
 
   return <div>
+    <h2>Convert file to Data URI</h2>
     <div>
       {
         (state.error) ? <span>{state.error}</span> : undefined
       }
     </div>
     <div>
-      <ValueTextArea onChange={onChangeValueText} value={state.value} />
+      <label htmlFor="inputFile">Input file:</label>
+      <input name={"inputFile"} type={'file'} onChange={onChangeFile}/>
+    </div>
+    <div>
       <ButtonArea>
-        <SwapButton onClick={onClickSwap}>↕Swap↕</SwapButton>
-        <ExecButton onClick={onClickEncode}>Encode</ExecButton>
-        <ExecButton onClick={onClickDecode}>Decode</ExecButton>
+        <ExecButton onClick={onClickEncode}>Convert</ExecButton>
       </ButtonArea>
-      <ResultTextArea value={state.result} />
+      <ResultTextArea value={state.result}/>
     </div>
   </div>;
 }
 
-const ValueTextArea = styled.textarea`
-  width: 90%;
-  height: 20em;
-`;
+
+const promiseFileReader = (file: File) => {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const result = ev.target?.result;
+      if (result && typeof result === 'string') {
+        resolve(result);
+      } else {
+        reject(new Error("Loading of the file failed."));
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+};
 
 const ResultTextArea = styled.textarea`
   width: 90%;
-  height: 40em;
+  height: 10em;
+`;
+
+const InputTextArea = styled.textarea`
+  width: 90%;
+  height: 10em;
 `;
 
 const ButtonArea = styled.div`
@@ -79,7 +88,3 @@ const ExecButton = styled.button`
   padding: 4pt;
 `;
 
-const SwapButton = styled.button`
-  margin-right: 10%;
-  padding: 4pt;
-`;
