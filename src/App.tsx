@@ -12,6 +12,8 @@ import DiffCsv from './pages/diff-csv'
 import FormatJson from './pages/format-json'
 import PullByRegex from './pages/pull-by-regex'
 import ForceDirectedGraph from './pages/force-directed-graph'
+import UrlEncode from './pages/urlencode'
+import Base64 from './pages/base64'
 import About from './pages/about'
 import Page from "./components/Page";
 
@@ -37,6 +39,12 @@ const App: React.FC = () => {
               <Link to="/force-directed-graph">Force directed graph</Link>
             </li>
             <li>
+              <Link to="/urlencode">URLEncode</Link>
+            </li>
+            <li>
+              <Link to="/base64">Base64</Link>
+            </li>
+            <li>
               <Link to="/about">About</Link>
             </li>
           </ul>
@@ -54,6 +62,12 @@ const App: React.FC = () => {
             </Route>
             <Route path="/force-directed-graph">
               <Page title={'Force directed graph - WebToolbox'}><ForceDirectedGraph /></Page>
+            </Route>
+            <Route path="/urlencode">
+              <Page title={'Url encode - WebToolbox'}><UrlEncode /></Page>
+            </Route>
+            <Route path="/base64">
+              <Page title={'Base64 - WebToolbox'}><Base64 /></Page>
             </Route>
             <Route path="/about">
               <Page title={'About - WebToolbox'}><About /></Page>
