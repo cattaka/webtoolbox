@@ -7,6 +7,7 @@ import {SimulationNodeDatum, SimulationLinkDatum} from "d3-force"
 import {downloadFile, formatYyyyMmDdHhMmSs, hashcode} from "../utils/global-functions";
 
 const exampleValues = "source\ttarget\tvalue\nfoo\tthud\t5\nbar\tfoo\t10\nfoobar\tbar\t15\nbaz\tfoobar\t20\nqux\tbaz\t15\nquux\tqux\t10\ncorge\tquux\t5\ngrault\tcorge\t10\ngarply\tgrault\t15\nwaldo\tgarply\t20\nfred\tthud\t15\nplugh\tfred\t10\nxyzzy\tplugh\t5\nthud\txyzzy\t10\ncorge\tfred\t5";
+const BASE_OPACITY = 0.6;
 
 type State = {
   ignoreFirstRow: boolean,
@@ -24,6 +25,7 @@ type State = {
   linkStrengthBias: number;
   linkStrengthFactor: number;
   fontSize: number;
+  searchText: string,
   aggregateFunctionForNode: AggregateFunction,
   simulation?: Simulation<NodeDatum, LinkDatum>;
   data: {
@@ -63,6 +65,7 @@ export default () => {
     linkStrengthBias: 1,
     linkStrengthFactor: 0,
     fontSize: 10,
+    searchText: '',
     aggregateFunctionForNode: "sum",
     simulation: undefined,
     data: {nodes: [], links: []}
@@ -97,6 +100,9 @@ export default () => {
   const onChangeFontSize = createCallback(state, dispatchState, (e) => {
     const fontSize = parseFloat(e.target.value);
     return (fontSize > 0 && !isNaN(fontSize)) ? {fontSize: fontSize} : undefined;
+  });
+  const onChangeSearchText = createCallback(state, dispatchState, (e) => {
+    return {searchText: e.target.value};
   });
   const onChangeRadiusBias = createCallback(state, dispatchState, (e) => {
     const radiusBias = parseFloat(e.target.value);
@@ -179,8 +185,14 @@ export default () => {
   }, [state.radiusBias, state.radiusFactor, state.linkLengthBias, state.linkLengthFactor, state.linkStrengthBias, state.linkStrengthFactor]);
 
   useEffect(() => {
-    d3.selectAll(".node > text").attr("font-size", state.fontSize + "pt");
-  }, [state.fontSize]);
+    d3.selectAll<any, NodeDatum>(".node > circle")
+      .attr("stroke", calcSearchStyleFunction(state.fontSize, state.searchText, 'node-stroke'));
+    d3.selectAll<any, NodeDatum>(".node > text")
+      .attr("font-size", calcSearchStyleFunction(state.fontSize, state.searchText, 'font-size'))
+      .attr("stroke", calcSearchStyleFunction(state.fontSize, state.searchText, 'stroke'))
+      .attr("fill", calcSearchStyleFunction(state.fontSize, state.searchText, 'fill'))
+    ;
+  }, [state.fontSize, state.searchText]);
 
   useEffect(() => {
     d3.selectAll<any, LinkDatum>(".link").attr("stroke-width", calcLinkWidthFunction(state.linkWidthBias, state.linkWidthFactor));
@@ -211,7 +223,7 @@ export default () => {
       .join("line")
       .attr("class", "link")
       .attr("stroke", "#999")
-      .attr("stroke-opacity", 0.6)
+      .attr("stroke-opacity", BASE_OPACITY)
       .attr("stroke-width", calcLinkWidthFunction(state.linkWidthBias, state.linkWidthFactor));
 
     const nodes = svgRoot
@@ -223,7 +235,7 @@ export default () => {
     const circles = nodes.append("circle")
       .attr("r", calcRadiusFunction(state.radiusBias, state.radiusFactor))
       .attr("fill", createColorFunction)
-      .attr("stroke", "#fff")
+      .attr("stroke", calcSearchStyleFunction(state.fontSize, state.searchText, 'node-stroke'))
       .attr("stroke-width", 1.5)
       .call(createDragCallback(simulation))
     ;
@@ -232,7 +244,9 @@ export default () => {
       .attr("dominant-baseline", "central")
       .attr("cursor", "default")
       .attr("user-select", "none")
-      .attr("font-size", state.fontSize + "pt")
+      .attr("font-size", calcSearchStyleFunction(state.fontSize, state.searchText, 'font-size'))
+      .attr("stroke", calcSearchStyleFunction(state.fontSize, state.searchText, 'stroke'))
+      .attr("fill", calcSearchStyleFunction(state.fontSize, state.searchText, 'fill'))
       .text(d => d.id)
       .call(createDragCallback(simulation))
 
@@ -350,6 +364,10 @@ export default () => {
       <ExecButton onClick={onClickSaveAsImage}>Save as image</ExecButton>
     </LeftPanel>
     <RightPanel id={"parent_svg"}>
+      <div>
+        <label htmlFor={"searchText"}>Search text</label>
+        <input type="text" name={'searchText'} onChange={onChangeSearchText} />
+      </div>
       <svg id={"my_svg"} width={state.svgWidth} height={state.svgHeight} style={{background: 'white'}}>
       </svg>
     </RightPanel>
@@ -493,6 +511,27 @@ const calcStrengthFunction = (linkStrengthBias: number, linkStrengthFactor: numb
 
 const calcLinkWidthFunction = (linkWidthBias: number, linkWidthFactor: number) => {
   return (link: LinkDatum) => (Math.sqrt(link.value) * linkWidthFactor + linkWidthBias);
+};
+
+// NOTE: Some svg renderer does not support 'style' attribute
+const calcSearchStyleFunction = (fontSize: number, searchText: string, target: ("font-size"|"fill"|"stroke"|"node-stroke")) => {
+    return (node: NodeDatum): string => {
+      if (searchText.length > 0 && node.id.includes(searchText)) {
+        return {
+          "font-size": `${fontSize * 1.5}pt`,
+          "fill": 'yellow',
+          "stroke": 'red',
+          "node-stroke": 'pink'
+        }[target];
+      } else {
+        return {
+          "font-size": `${fontSize}pt`,
+          "fill": 'black',
+          "stroke": '',
+          "node-stroke": '#fff'
+        }[target];
+      }
+    };
 };
 
 const resetPosition = (node: NodeDatum, width: number, height: number) => {
