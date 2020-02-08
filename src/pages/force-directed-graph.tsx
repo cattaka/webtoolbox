@@ -4,7 +4,7 @@ import * as d3 from 'd3'
 import {convertCsv, parseCsvString} from "../utils/csv-utils";
 import {Simulation} from "d3";
 import {SimulationNodeDatum, SimulationLinkDatum} from "d3-force"
-import {hashcode} from "../utils/global-functions";
+import {downloadFile, formatYyyyMmDdHhMmSs, hashcode} from "../utils/global-functions";
 
 const exampleValues = "source\ttarget\tvalue\nfoo\tthud\t5\nbar\tfoo\t10\nfoobar\tbar\t15\nbaz\tfoobar\t20\nqux\tbaz\t15\nquux\tqux\t10\ncorge\tquux\t5\ngrault\tcorge\t10\ngarply\tgrault\t15\nwaldo\tgarply\t20\nfred\tthud\t15\nplugh\tfred\t10\nxyzzy\tplugh\t5\nthud\txyzzy\t10\ncorge\tfred\t5";
 
@@ -45,7 +45,7 @@ type LinkDatum = {
 type AggregateFunction = "sum" | "count" | "min" | "max" | "none";
 
 export default () => {
-  const [ state, dispatchState ] = useState({
+  const [state, dispatchState] = useState({
     ignoreFirstRow: true,
     values: exampleValues,
     markedTable: undefined,
@@ -65,7 +65,7 @@ export default () => {
     fontSize: 10,
     aggregateFunctionForNode: "sum",
     simulation: undefined,
-    data: { nodes: [], links: [] }
+    data: {nodes: [], links: []}
   } as State);
 
   const onChangeIgnoreFirstRow = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -73,6 +73,25 @@ export default () => {
       ...state,
       ignoreFirstRow: e.target.checked
     });
+  };
+
+  const onClickSaveAsImage = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+    const orig = d3.select("#my_svg").nodes()[0] as (SVGSVGElement | undefined);
+    if (!orig) {
+      return;
+    }
+    const svg = orig.cloneNode(true) as SVGSVGElement;
+    const doc = new Document();
+    const background = doc.createElementNS("http://www.w3.org/2000/svg", 'rect');
+    background.setAttribute('width', '100%');
+    background.setAttribute('height', '100%');
+    background.setAttribute('fill', 'white');
+    svg.insertAdjacentElement('afterbegin', background);
+    doc.appendChild(svg);
+    const rawSvg = '<?xml version="1.0" encoding="UTF-8"?>' + doc.documentElement.outerHTML;
+    const rawSvgBlob = new Blob([rawSvg], { type: "image/svg+xml" });
+    const filename = `graph-${formatYyyyMmDdHhMmSs(new Date())}.svg`
+    downloadFile(filename, rawSvgBlob);
   };
 
   const onChangeFontSize = createCallback(state, dispatchState, (e) => {
@@ -126,12 +145,14 @@ export default () => {
       values: convertCsv(state.values, state.separator, state.quote, e.target.value, state.quote),
     };
   });
-  const onChangeValuesText = (e: React.ChangeEvent<HTMLTextAreaElement>) => { dispatchState({ ...state, values: e.target.value }); };
+  const onChangeValuesText = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    dispatchState({...state, values: e.target.value});
+  };
 
   useEffect(() => {
     const parentRect: DOMRect = (d3.select("#parent_svg").node() as any).getBoundingClientRect();
     const svg = d3.select("#my_svg");
-    console.log(parentRect);
+    // console.log(parentRect);
     if (parentRect) {
       svg.attr("viewBox", [0, 0, parentRect.width, parentRect.height].join(','));
     }
@@ -167,7 +188,9 @@ export default () => {
 
   const onClickDraw = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     const data = parseInputValues(state.values, state.separator, state.quote, state.ignoreFirstRow, state.aggregateFunctionForNode);
-    data.nodes.forEach(n => { resetPosition(n, state.svgWidth, state.svgHeight); });
+    data.nodes.forEach(n => {
+      resetPosition(n, state.svgWidth, state.svgHeight);
+    });
 
     const simulation = d3.forceSimulation<NodeDatum, LinkDatum>(data.nodes)
       .force("force-link",
@@ -213,7 +236,7 @@ export default () => {
       .text(d => d.id)
       .call(createDragCallback(simulation))
 
-    const zoomed = function() {
+    const zoomed = function () {
       svgRoot.attr("transform", d3.event.transform);
     };
 
@@ -264,7 +287,8 @@ export default () => {
       </div>
       <div>
         <label htmlFor="aggregateFunctionForNode">Aggregate function for node</label>
-        <select name={"aggregateFunctionForNode"} onChange={onChangeAggregateFunctionForNode} value={state.aggregateFunctionForNode}>
+        <select name={"aggregateFunctionForNode"} onChange={onChangeAggregateFunctionForNode}
+                value={state.aggregateFunctionForNode}>
           <option value={"sum"}>sum</option>
           <option value={"count"}>count</option>
           <option value={"max"}>max</option>
@@ -273,50 +297,57 @@ export default () => {
         </select>
       </div>
       <div>
-        <ValuesTextArea onChange={onChangeValuesText} value={state.values} />
+        <ValuesTextArea onChange={onChangeValuesText} value={state.values}/>
       </div>
       <h2>Graph option</h2>
       <div>
         <label htmlFor="ignoreFirstRow">Ignore first row (e.g. labels)</label>
-        <input type="checkbox" name={"ignoreFirstRow"} onChange={onChangeIgnoreFirstRow} checked={state.ignoreFirstRow} />
+        <input type="checkbox" name={"ignoreFirstRow"} onChange={onChangeIgnoreFirstRow}
+               checked={state.ignoreFirstRow}/>
       </div>
       <div>
         <label htmlFor="fontSize">Font size</label>
-        <NumberInput type="number" name={"fontSize"} onChange={onChangeFontSize} value={state.fontSize} />
+        <NumberInput type="number" name={"fontSize"} onChange={onChangeFontSize} value={state.fontSize}/>
       </div>
       <div>
         <label htmlFor="radiusBias">Radius bias</label>
-        <NumberInput type="number" name={"radiusBias"} onChange={onChangeRadiusBias} value={state.radiusBias} />
+        <NumberInput type="number" name={"radiusBias"} onChange={onChangeRadiusBias} value={state.radiusBias}/>
       </div>
       <div>
         <label htmlFor="radiusFactor">Radius factor</label>
-        <NumberInput type="number" name={"radiusFactor"} onChange={onChangeRadiusFactor} value={state.radiusFactor} />
+        <NumberInput type="number" name={"radiusFactor"} onChange={onChangeRadiusFactor} value={state.radiusFactor}/>
       </div>
       <div>
         <label htmlFor="linkLengthBias">Link length bias</label>
-        <NumberInput type="number" name={"linkLengthBias"} onChange={onChangeLinkLengthBias} value={state.linkLengthBias} />
+        <NumberInput type="number" name={"linkLengthBias"} onChange={onChangeLinkLengthBias}
+                     value={state.linkLengthBias}/>
       </div>
       <div>
         <label htmlFor="linkLengthFactor">Link length factor</label>
-        <NumberInput type="number" name={"linkLengthFactor"} onChange={onChangeLinkLengthFactor} value={state.linkLengthFactor} />
+        <NumberInput type="number" name={"linkLengthFactor"} onChange={onChangeLinkLengthFactor}
+                     value={state.linkLengthFactor}/>
       </div>
       <div>
         <label htmlFor="linkWidthBias">Link width bias</label>
-        <NumberInput type="number" name={"linkWidthBias"} onChange={onChangeLinkWidthBias} value={state.linkWidthBias} />
+        <NumberInput type="number" name={"linkWidthBias"} onChange={onChangeLinkWidthBias} value={state.linkWidthBias}/>
       </div>
       <div>
         <label htmlFor="linkWidthFactor">Link width factor</label>
-        <NumberInput type="number" name={"linkWidthFactor"} onChange={onChangeLinkWidthFactor} value={state.linkWidthFactor} />
+        <NumberInput type="number" name={"linkWidthFactor"} onChange={onChangeLinkWidthFactor}
+                     value={state.linkWidthFactor}/>
       </div>
       <div>
         <label htmlFor="linkStrengthBias">Link strength bias</label>
-        <NumberInput type="number" name={"linkStrengthBias"} onChange={onChangeLinkStrengthBias} value={state.linkStrengthBias} />
+        <NumberInput type="number" name={"linkStrengthBias"} onChange={onChangeLinkStrengthBias}
+                     value={state.linkStrengthBias}/>
       </div>
       <div>
         <label htmlFor="linkStrengthFactor">Link strength factor</label>
-        <NumberInput type="number" name={"linkStrengthFactor"} onChange={onChangeLinkStrengthFactor} value={state.linkStrengthFactor} />
+        <NumberInput type="number" name={"linkStrengthFactor"} onChange={onChangeLinkStrengthFactor}
+                     value={state.linkStrengthFactor}/>
       </div>
       <ExecButton onClick={onClickDraw}>Draw</ExecButton>
+      <ExecButton onClick={onClickSaveAsImage}>Save as image</ExecButton>
     </LeftPanel>
     <RightPanel id={"parent_svg"}>
       <svg id={"my_svg"} width={state.svgWidth} height={state.svgHeight} style={{background: 'white'}}>
@@ -376,20 +407,21 @@ const parseInputValues = (
   csv.forEach(vs => {
     const sourceId = vs[0];
     const targetId = vs[1];
-    const value = parseFloat(vs[2]);
-    if (!sourceId || !targetId || isNaN(value)) {
+    let value = parseFloat(vs[2]);
+    if (!sourceId || !targetId) {
       return;  // Ignore
     }
+    value = (isNaN(value)) ? 1 : value;
 
     // Create Nodes
     let sourceNode = name2Node.get(sourceId);
     let targetNode = name2Node.get(targetId);
     if (!sourceNode) {
-      sourceNode = { id: sourceId, group: 0, value: 0 };
+      sourceNode = {id: sourceId, group: 0, value: 0};
       name2Node.set(sourceId, sourceNode);
     }
     if (!targetNode) {
-      targetNode = { id: targetId, group: 0, value: 0 };
+      targetNode = {id: targetId, group: 0, value: 0};
       name2Node.set(targetId, targetNode);
     }
 
@@ -476,9 +508,9 @@ const resetPosition = (node: NodeDatum, width: number, height: number) => {
 const createCallback = (
   state: State,
   dispatchState: (state: State) => void,
-  f: (e: React.ChangeEvent<HTMLInputElement|HTMLSelectElement>) => (Partial<State> | undefined)
-): (e: React.ChangeEvent<HTMLInputElement|HTMLSelectElement>) => void => {
-  return (e: React.ChangeEvent<HTMLInputElement|HTMLSelectElement>) => {
+  f: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => (Partial<State> | undefined)
+): (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void => {
+  return (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const newState = f(e);
     if (newState) {
       dispatchState({
@@ -507,7 +539,7 @@ const RightPanel = styled.div`
 
 const ValuesTextArea = styled.textarea`
   width: 90%;
-  height: 30em;
+  height: 25em;
 `;
 
 const NumberInput = styled.input`

@@ -8,3 +8,23 @@ export function hashcode(str: string) {
   }
   return hash;
 }
+
+export const downloadFile = (filename: string, blob: Blob) => {
+  const element = document.createElement('a');
+  element.setAttribute('href', window.URL.createObjectURL(blob));
+  element.setAttribute('download', filename);
+  element.style.display = 'none';
+  document.body.appendChild(element);
+  element.click();
+  document.body.removeChild(element);
+};
+
+export const formatYyyyMmDdHhMmSs = (dt: Date): string  =>{
+  const y = dt.getFullYear();
+  const m = ("00" + (dt.getMonth()+1)).slice(-2);
+  const d = ("00" + dt.getDate()).slice(-2);
+  const h = ("00" + dt.getHours()).slice(-2);
+  const min = ("00" + dt.getMinutes()).slice(-2);
+  const s = ("00" + dt.getSeconds()).slice(-2);
+  return y + m + d + h + min + s;
+}
