@@ -1,3 +1,4 @@
+// You can copy value from "/__/firebase/init.js"
 export const firebase_settings = {
   "apiKey": "put your value",
   "appId": "put your value",
