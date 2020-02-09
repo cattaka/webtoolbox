@@ -1,0 +1,10 @@
+export const firebase_settings = {
+  "apiKey": "put your value",
+  "appId": "put your value",
+  "authDomain": "put your value",
+  "databaseURL": "put your value",
+  "measurementId": "put your value",
+  "messagingSenderId": "put your value",
+  "projectId": "put your value",
+  "storageBucket": "put your value"
+};
