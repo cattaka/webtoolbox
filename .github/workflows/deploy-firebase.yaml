@@ -17,7 +17,7 @@ jobs:
     - name: Install Dependencies
       run: npm install
     - name: Create settings.ts
-      run: echo "${{ secreets.SETTINGS_TS }}" > src/settings.ts
+      run: echo "${{ secrets.SETTINGS_TS }}" > src/settings.ts
     - name: Build
       run: npm run build
 #    - name: deploy to Firebase Hosting
