@@ -1,6 +1,9 @@
 name: deploy-firebase
 
-on: [push]
+on:
+  push:
+    branches:
+      - master
 
 jobs:
   FrontDeploy:
@@ -22,7 +25,6 @@ jobs:
       run: npm run build
       env:
         CI: false
-#    - name: deploy to Firebase Hosting
-#      run: |
-#        yarn deploy --token=${{ secrets.FIREBASE_TOKEN }}
+    - name: deploy to Firebase Hosting
+      run: yarn deploy --token=${{ secrets.FIREBASE_TOKEN }}
 
