@@ -9,6 +9,8 @@ jobs:
     steps:
     - name: Checkout Repo
       uses: actions/checkout@v2
+    - name: Create settings.ts
+      run: echo "${{ secrets.SETTINGS_TS }}" > src/settings.ts
     - name: setup Node
       uses: actions/setup-node@v1
       with:
@@ -16,10 +18,10 @@ jobs:
         registry-url: 'https://registry.npmjs.org'
     - name: Install Dependencies
       run: npm install
-    - name: Create settings.ts
-      run: echo "${{ secrets.SETTINGS_TS }}" > src/settings.ts
     - name: Build
       run: npm run build
+      env:
+        CI: false
 #    - name: deploy to Firebase Hosting
 #      run: |
 #        yarn deploy --token=${{ secrets.FIREBASE_TOKEN }}
